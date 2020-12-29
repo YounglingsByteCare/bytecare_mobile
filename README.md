@@ -1,16 +1,9 @@
-# bytecare_mobile
+# ByteCare Mobile
 
-A new Flutter application.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+ByteCare was formed to counteract the problem of overcrowding in the waiting rooms of medical
+ centres. This overcrowding, is a major factor when it comes to the spreading of illnesses and/or
+  diseases and we hope to overcome the problem by providing a ticket management solution.
+  
+ByteCare is a ticket management that allows for the easy management of appointment at medical
+ centres, thus reducing overcrowding in waiting rooms as well as reducing the chances of physical
+  contact with sick indiciduals.
