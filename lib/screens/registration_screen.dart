@@ -126,27 +126,29 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   SizedBox(height: 12.0),
                   Row(
                     children: [
-                      GradientButton(
-                        onPressed: () {
-                          if (_activeStep > 0) {
-                            _activeStep--;
-                          }
-                        },
-                        backgroundFill: GradientColor(Colors.white),
-                        borderRadius: BorderRadius.circular(4.0),
-                        borderSide: GradientBorderSide(
-                          borderFill: GradientColor(
-                            kButtonBackgroundLinearGradient,
-                          ),
-                          width: 0.0,
-                        ),
-                        elevation: 1.0,
-                        padding: EdgeInsets.symmetric(
-                          vertical: 12.0,
-                          horizontal: 12.0,
-                        ),
-                        child: Icon(Icons.arrow_back),
-                      ),
+                      _activeStep > 0
+                          ? GradientButton(
+                              onPressed: () {
+                                if (_activeStep > 0) {
+                                  _activeStep--;
+                                }
+                              },
+                              backgroundFill: GradientColor(Colors.white),
+                              borderRadius: BorderRadius.circular(4.0),
+                              borderSide: GradientBorderSide(
+                                borderFill: GradientColor(
+                                  kButtonBackgroundLinearGradient,
+                                ),
+                                width: 0.0,
+                              ),
+                              elevation: 1.0,
+                              padding: EdgeInsets.symmetric(
+                                vertical: 12.0,
+                                horizontal: 12.0,
+                              ),
+                              child: Icon(Icons.arrow_back),
+                            )
+                          : Container(),
                       SizedBox(width: 16.0),
                       Flexible(
                         flex: 3,
