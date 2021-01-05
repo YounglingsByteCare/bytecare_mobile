@@ -6,6 +6,7 @@ import '../utils/color.dart';
 final Color kThemePrimaryBlue = Color(0xFF1D9FCF);
 final Color kThemePrimaryPurple = Color(0xFF940094);
 final Color kThemeSuccessColor = Color(0xFF30B400);
+final Color kThemeErrorColor = Colors.red;
 
 //#region Global Gradients
 final LinearGradient kThemePrimaryLinearGradient = LinearGradient(
@@ -68,9 +69,14 @@ final TextStyle kSubtitle2TextStyle = GoogleFonts.montserrat(
   fontSize: 16.0,
 );
 
-final TextStyle kBodyTextStyle = GoogleFonts.openSans(
+final TextStyle kBody1TextStyle = GoogleFonts.openSans(
   color: Colors.black,
   fontSize: 16.0,
+);
+
+final TextStyle kBody2TextStyle = GoogleFonts.openSans(
+  color: Colors.black,
+  fontSize: 12.0,
 );
 
 /*
@@ -106,6 +112,8 @@ final TextStyle kButtonBody2TextStyle = GoogleFonts.openSans(
  * Input Data
  */
 // Input Decoration for Form Fields, not sure about others, yet.
+final double kFormFieldSpacing = 20.0;
+
 final kFormFieldInputDecoration = InputDecoration(
   filled: true,
   fillColor: Colors.white,
@@ -115,7 +123,7 @@ final kFormFieldInputDecoration = InputDecoration(
   ),
   enabledBorder: OutlineInputBorder(
     borderSide: BorderSide(
-      color: Colors.transparent,
+      color: Colors.grey.shade300,
       width: 1.0,
     ),
   ),
@@ -123,6 +131,18 @@ final kFormFieldInputDecoration = InputDecoration(
     borderSide: BorderSide(
       color: kThemePrimaryBlue,
       width: 1.0,
+    ),
+  ),
+  errorBorder: OutlineInputBorder(
+    borderSide: BorderSide(
+      color: kThemeErrorColor,
+      width: 1.0,
+    ),
+  ),
+  focusedErrorBorder: OutlineInputBorder(
+    borderSide: BorderSide(
+      color: kThemeErrorColor,
+      width: 2.0,
     ),
   ),
 );
