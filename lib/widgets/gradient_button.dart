@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+/* Project-level Imports */
+import '../models/gradient_color.dart';
+import '../models/gradient_border_side.dart';
+
 class GradientButton extends StatelessWidget {
   final CustomPainter _painter;
   final Function onPressed;
@@ -38,6 +42,7 @@ class GradientButton extends StatelessWidget {
         borderRadius: borderRadius,
         child: InkWell(
           onTap: onPressed,
+          borderRadius: borderRadius,
           child: Container(
             color: Colors.transparent,
             padding: padding,
@@ -49,34 +54,6 @@ class GradientButton extends StatelessWidget {
   }
 }
 
-class GradientColor {
-  final dynamic fillValue;
-  final bool _isGradient;
-
-  const GradientColor(this.fillValue)
-      : assert(fillValue is Gradient || fillValue is Color),
-        _isGradient = fillValue is Gradient;
-
-  bool get isGradient => _isGradient;
-}
-
-class GradientBorderSide {
-  final GradientColor borderFill;
-  final double width;
-
-  static GradientBorderSide zero = GradientBorderSide(
-    borderFill: GradientColor(Colors.transparent),
-    width: 0,
-  );
-
-  GradientBorderSide({
-    @required this.borderFill,
-    this.width = 1.0,
-  });
-
-  bool get isGradientBorder => borderFill.isGradient;
-}
-
 class _GradientButtonPainter extends CustomPainter {
   final BorderRadius borderRadius;
   final GradientBorderSide borderSide;
@@ -85,12 +62,13 @@ class _GradientButtonPainter extends CustomPainter {
   final GradientColor bgFill;
 
   _GradientButtonPainter({
-    @required this.borderSide,
     @required this.bgFill,
+    GradientBorderSide borderSide,
     BorderRadius borderRadius,
     this.shadowColor = Colors.black,
     this.elevation = 1.0,
   })  : assert(elevation > 0 ? shadowColor != null : true),
+        this.borderSide = borderSide ?? GradientBorderSide.zero,
         this.borderRadius = borderRadius ?? BorderRadius.circular(0);
 
   @override
@@ -118,17 +96,12 @@ class _GradientButtonPainter extends CustomPainter {
     if (borderSide.width > 0) {
       Paint borderPaint = Paint();
       borderPaint.style = PaintingStyle.fill;
-      Path borderRect;
       if (borderSide.isGradientBorder) {
         Gradient g = borderSide.borderFill.fillValue;
         borderPaint.shader = g.createShader(outerRect);
-
-        borderRect = Path()..addRRect(outerRRect);
       } else {
         Color g = borderSide.borderFill.fillValue;
         borderPaint.color = g;
-
-        borderRect = Path()..addRRect(outerRRect);
       }
 
       // canvas.drawPath(borderRect, borderPaint);
