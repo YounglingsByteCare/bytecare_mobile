@@ -1,51 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:form_field_validator/form_field_validator.dart';
 
-/*
- * Project-level imports
- */
-// Constants
-import 'theme.dart';
 
-// Utilities
-import '../utils/color.dart';
+const double kTextInputFieldElevation = 4.0;
 
-const double kTextInputFieldElevation = 1.0;
-
-Widget textInputFieldBuilder(InputDecoration inputDecoration) {
-  return Material(
-    elevation: kTextInputFieldElevation,
-    shadowColor: brighten(kThemePrimaryBlue, 90),
-    borderRadius: BorderRadius.circular(4.0),
-    child: TextFormField(
-      decoration: inputDecoration,
-    ),
+// Input Field Builders, to easily build element of certain properties.
+Widget textInputFieldBuilder(
+    {InputDecoration decoration, FieldValidator validator}) {
+  return TextFormField(
+    decoration: decoration,
+    autovalidateMode: AutovalidateMode.onUserInteraction,
+    validator: validator,
   );
 }
 
-Widget emailInputFieldBuilder(InputDecoration inputDecoration) {
-  return Material(
-    elevation: kTextInputFieldElevation,
-    shadowColor: brighten(kThemePrimaryBlue, 90),
-    borderRadius: BorderRadius.circular(4.0),
-    child: TextFormField(
+Widget phoneInputFieldBuilder(
+    {InputDecoration decoration, FieldValidator validator}) {
+  return TextFormField(
+    keyboardType: TextInputType.phone,
+    decoration: decoration,
+    autovalidateMode: AutovalidateMode.onUserInteraction,
+    validator: validator,
+  );
+}
+
+Widget emailInputFieldBuilder(
+    {InputDecoration decoration, FieldValidator validator}) {
+  return TextFormField(
       keyboardType: TextInputType.emailAddress,
-      decoration: inputDecoration,
-    ),
-  );
+      decoration: decoration,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      validator: validator);
 }
 
-Widget passwordInputFieldBuilder(
-  InputDecoration inputDecoration,
+Widget passwordInputFieldBuilder({
+  InputDecoration decoration,
+  FieldValidator validator,
   bool obscureText,
-) {
-  return Material(
-    elevation: kTextInputFieldElevation,
-    shadowColor: Colors.black,
-    borderRadius: BorderRadius.circular(4.0),
-    child: TextFormField(
-      obscureText: obscureText,
-      keyboardType: TextInputType.visiblePassword,
-      decoration: inputDecoration,
-    ),
+}) {
+  return TextFormField(
+    obscureText: obscureText,
+    keyboardType: TextInputType.visiblePassword,
+    decoration: decoration,
+    autovalidateMode: AutovalidateMode.onUserInteraction,
+    enableSuggestions: false,
+    validator: validator,
   );
 }
