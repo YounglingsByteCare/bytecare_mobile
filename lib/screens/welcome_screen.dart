@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:ms_undraw/ms_undraw.dart' show UnDraw, UnDrawIllustration;
+import 'package:http/http.dart' as http;
+import 'package:wave/config.dart';
+import 'package:wave/wave.dart';
 
 /* My Imports */
 // Constants
 import '../constants/theme.dart';
 
+// Data Models
+import '../models/gradient_color.dart';
+import '../models/gradient_border_side.dart';
+
 // Widgets
+import '../widgets/information_carousel.dart';
+import '../widgets/gradient_background.dart';
 import '../widgets/gradient_button.dart';
 
 // Screens
@@ -17,127 +26,85 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
-    return Theme(
-      data: kByteCareThemeData,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: kThemePrimaryLightLinearGradient,
+    return GradientBackground(
+      themeData: kByteCareThemeData,
+      backgroundFill: GradientColor(kThemePrimaryLightLinearGradient),
+      ignoreSafeArea: true,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        resizeToAvoidBottomInset: false,
+        appBar: AppBar(
+          centerTitle: true,
+          toolbarHeight: kToolbarHeight * 2,
+          title: Text(
+            'ByteCare',
+            textAlign: TextAlign.center,
+            style: kTitle1TextStyle,
+          ),
         ),
-        child: SafeArea(
-          child: Scaffold(
-            backgroundColor: Colors.transparent,
-            resizeToAvoidBottomInset: false,
-            body: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Text(
-                      'ByteCare',
-                      textAlign: TextAlign.center,
-                      style: kTitle1TextStyle,
-                    ),
-                    SizedBox(height: 16.0),
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(24.0),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12.0),
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 3.0,
-                        ),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: <Widget>[
-                          AspectRatio(
-                            aspectRatio: 10 / 9,
-                            child: UnDraw(
-                              color: kThemePrimaryPurple,
-                              illustration: UnDrawIllustration.security,
-                            ),
-                          ),
-                          Text(
-                            'Safety',
-                            style: kTitle2TextStyle,
-                          ),
-                          Text('We work hard'),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 32.0),
-                    GradientButton(
-                      backgroundFill: GradientColor(
-                        kButtonBackgroundLinearGradient,
-                      ),
-                      borderRadius: BorderRadius.circular(4.0),
-                      borderSide: GradientBorderSide.zero,
-                      padding: EdgeInsets.symmetric(
-                        vertical: 20.0,
-                        horizontal: 36.0,
-                      ),
+        body: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              InformationCarousel(
+                carouselShadow: BoxShadow(
+                  color: Colors.black.withAlpha(0x7),
+                  offset: Offset(0, 1.0),
+                  blurRadius: 3.0,
+                ) ,
+              ),
+              Divider(
+                height: 40.0,
+                indent: 64.0,
+                endIndent: 64.0,
+              ),
+              Row(
+                children: <Widget>[
+                  Flexible(
+                    child: GradientButton(
                       onPressed: () {
                         Navigator.pushNamed(context, RegistrationScreen.id);
                       },
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Text(
-                                'Get Started Now',
-                                style: kButtonBody1TextStyle.copyWith(
-                                  color: Colors.white,
-                                ),
-                              ),
-                              Text(
-                                'Create an Account',
-                                style: kButtonBody2TextStyle.copyWith(
-                                  color: Colors.white.withOpacity(0.65),
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(width: 24.0),
-                          Icon(
-                            Icons.arrow_forward,
-                            color: Colors.white,
-                          ),
-                        ],
+                      backgroundFill: GradientColor(
+                        kButtonBackgroundLinearGradient,
                       ),
-                    ),
-                    SizedBox(height: 24.0),
-                    Text('Already have an account?'),
-                    SizedBox(height: 8.0),
-                    GradientButton(
-                      onPressed: () {
-                        print('I\'m going to ${LoginScreen.id} now.');
-                        Navigator.pushNamed(context, LoginScreen.id);
-                      },
-                      backgroundFill: GradientColor(Colors.white),
-                      elevation: 1.0,
-                      borderSide: GradientBorderSide(
-                        borderFill:
-                            GradientColor(kButtonBackgroundLinearGradient),
-                        width: 2.0,
-                      ),
-                      borderRadius: BorderRadius.circular(4.0),
+                      borderRadius: BorderRadius.circular(8.0),
                       padding: EdgeInsets.symmetric(
-                        vertical: 20.0, // vertical pad (16) + stroke extra (4)
-                        horizontal: 32.0,
+                        vertical: 16.0,
+                        horizontal: 24.0,
                       ),
                       child: Text(
-                        'Sign In',
+                        'Sign Up',
+                        style: kButtonBody1TextStyle.copyWith(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 16.0),
+                  Flexible(
+                    child: GradientButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, LoginScreen.id);
+                      },
+                      backgroundFill: GradientColor(
+                        Colors.white,
+                      ),
+                      borderRadius: BorderRadius.circular(8.0),
+                      padding: EdgeInsets.symmetric(
+                        vertical: 16.0,
+                        horizontal: 24.0,
+                      ),
+                      child: Text(
+                        'Login',
                         style: kButtonBody1TextStyle,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ),
+            ],
           ),
         ),
       ),
