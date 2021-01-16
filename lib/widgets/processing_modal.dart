@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:wave/config.dart';
 import 'package:wave/wave.dart';
 
@@ -34,22 +33,27 @@ class ProcessingModal extends StatelessWidget {
         borderRadius: BorderRadius.circular(8.0),
         color: color,
       ),
-      child: _buildWaveContent(Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            this.icon,
-            Flexible(child: SizedBox(height: 24.0)),
-            Text(
-              this.message,
-              textAlign: TextAlign.center,
-              style: kLoadingTextStyle,
+      clipBehavior: Clip.hardEdge,
+      child: _buildWaveContent(
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                this.icon,
+                Flexible(child: SizedBox(height: 24.0)),
+                Text(
+                  this.message,
+                  textAlign: TextAlign.center,
+                  style: kLoadingTextStyle,
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      )),
+      ),
     );
   }
 
