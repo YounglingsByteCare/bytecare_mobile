@@ -6,7 +6,6 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 /* My Imports */
 // Constants
 import '../constants/theme.dart';
-import '../constants/input_fields.dart';
 
 // Utils
 import '../utils/color.dart';
@@ -26,6 +25,7 @@ import '../widgets/processing_modal.dart';
 
 // Screens
 import 'login_screen.dart';
+import 'application_screen.dart';
 
 class RegistrationScreen extends StatefulWidget {
   static String id = 'registration_screen';
@@ -35,14 +35,15 @@ class RegistrationScreen extends StatefulWidget {
 }
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
-  final Duration _registrationCompletionDelay = Duration(seconds: 3);
-
   bool _isPasswordVisible = false;
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   ProcessingManager _registrationState;
 
   GestureRecognizer tapRecognizer(void Function() func) =>
       TapGestureRecognizer()..onTap = func;
+
+  TextEditingController _emailController = TextEditingController();
+  TextEditingController _passwordController = TextEditingController();
 
   void showTermsOfServiceModal() {}
 
@@ -52,7 +53,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   void initState() {
     super.initState();
     _registrationState = ProcessingManager(
-      modalContainer: _buildContent(),
       modalBuilder: (data, content, message) => Stack(
         children: [
           content,
@@ -60,7 +60,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             child: Material(
               color: Colors.black45,
               child: Align(
-                alignment: Alignment.bottomCenter,
+                alignment: Alignment.center,
                 child: ProcessingModal(
                   color: data.color,
                   icon: data.icon,
@@ -95,6 +95,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       ),
       loadingData: ConnectionResultData(
         color: kThemePrimaryBlue,
+        message: '''We're creating your account right now.
+          Don't worry, it'll be quick.''',
         icon: SpinKitPulse(
           color: Colors.white,
         ),
@@ -117,18 +119,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(
-            Icons.chevron_left,
-            color: Colors.black,
-          ),
+        leading: BackButton(
+          color: Colors.black,
           onPressed: () {
             Navigator.pop(context);
           },
-        ),
-        title: Text(
-          'Go Back',
-          style: kBody1TextStyle,
         ),
       ),
       body: SingleChildScrollView(
@@ -151,46 +146,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 ),
                 child: Column(
                   children: <Widget>[
-                    textInputFieldBuilder(
-                      decoration: kFormFieldInputDecoration.copyWith(
-                        labelText: 'Username (required)',
-                        helperText: 'This can be anything unique, including '
-                            'your name.',
-                      ),
-                      validator: MultiValidator([
-                        RequiredValidator(
-                            errorText: 'This field is '
-                                'required.'),
-                        MinLengthValidator(
-                          1,
-                          errorText: 'Your username '
-                              'must be between at least 1 characters '
-                              'long',
-                        ),
-                      ]),
-                    ),
-                    SizedBox(height: kFormFieldSpacing),
-                    phoneInputFieldBuilder(
-                      decoration: kFormFieldInputDecoration.copyWith(
-                        labelText: 'Phone Number (required)',
-                      ),
-                      validator: MultiValidator([
-                        RequiredValidator(errorText: 'This field is required.'),
-                        LengthRangeValidator(
-                          min: 10,
-                          max: 10,
-                          errorText: 'Your phone number must be 10 '
-                              'digits long.',
-                        ),
-                        PatternValidator(
-                          r'^(0[678]\d)((\d{7})|(( |-)(\d{3})( |-)(\d{4})))',
-                          errorText: 'This looks wrong. Please '
-                              'recheck it.',
-                        ),
-                      ]),
-                    ),
-                    SizedBox(height: kFormFieldSpacing),
-                    emailInputFieldBuilder(
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
                       decoration: kFormFieldInputDecoration.copyWith(
                         labelText: 'Email Address (required)',
                       ),
@@ -204,23 +162,26 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       ]),
                     ),
                     SizedBox(height: kFormFieldSpacing),
-                    passwordInputFieldBuilder(
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: !_isPasswordVisible,
+                      keyboardType: TextInputType.visiblePassword,
+                      enableSuggestions: false,
                       decoration: kFormFieldInputDecoration.copyWith(
                         labelText: 'Password (required)',
                         suffixIcon: IconButton(
-                          icon: Icon(
-                            _isPasswordVisible
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                          ),
                           onPressed: () {
                             setState(() {
                               _isPasswordVisible = !_isPasswordVisible;
                             });
                           },
+                          icon: Icon(
+                            _isPasswordVisible
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
                         ),
                       ),
-                      obscureText: _isPasswordVisible,
                       validator: MultiValidator([
                         RequiredValidator(
                             errorText: 'This field is '
@@ -262,26 +223,60 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             SizedBox(height: 16.0),
             GradientButton(
               onPressed: () async {
+                // Check if form data is valid.
                 var valid = _formKey.currentState.validate();
                 if (!valid) {
                   return;
                 }
 
+                print('Set RegistrationState to begin');
+
+                // Show processing modal.
                 setState(() {
                   _registrationState.begin();
                 });
 
-                var apiCode = await ByteCareAPI.signup();
+                // Send 'signup' api call.
+                var registerResult = await ByteCareAPI().signup(
+                  emailAddress: _emailController.text,
+                  password: _passwordController.text,
+                );
 
                 setState(() {
-                  _registrationState.complete(apiCode.code, apiCode.message);
+                  if (registerResult.code == 200) {
+                    _registrationState.complete(
+                      registerResult.code,
+                      'Your account is made. Let\'s carry on!',
+                    );
+                  } else {
+                    _registrationState.completeWithError(
+                      registerResult.code,
+                      registerResult.message,
+                    );
+                  }
                 });
 
-                await Future.delayed(_registrationCompletionDelay);
+                var loginResult = await ByteCareAPI().login(
+                  emailAddress: _emailController.text,
+                  password: _passwordController.text,
+                );
 
-                setState(() {
-                  _registrationState.reset();
-                });
+                if (loginResult.code == 200) {
+                  print('Wait');
+
+                  await Future.delayed(kProcessDelayDuration);
+
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, ApplicationScreen.id, (r) => false);
+                } else {
+                  setState(() {
+                    _registrationState.completeWithError(400, '');
+                  });
+                }
+
+                // setState(() {
+                //   _registrationState.reset();
+                // });
               },
               backgroundFill: GradientColor(
                 kButtonBackgroundLinearGradient,
