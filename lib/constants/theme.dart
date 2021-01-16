@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../utils/color.dart';
 
@@ -8,10 +9,25 @@ final Color kThemePrimaryPurple = Color(0xFF940094);
 final Color kThemeSuccessColor = Color(0xFF30B400);
 final Color kThemeErrorColor = Colors.red;
 
+final double kDefaultMapZoom = 15.0;
+final CameraPosition kDefaultCameraPosition = CameraPosition(
+  target: LatLng(-33.92006831792547, 18.41443031685197),
+  zoom: kDefaultMapZoom,
+);
+
 //#region Global Gradients
 final LinearGradient kThemePrimaryLinearGradient = LinearGradient(
   begin: Alignment.topCenter,
   end: Alignment.bottomCenter,
+  colors: <Color>[
+    kThemePrimaryBlue,
+    kThemePrimaryPurple,
+  ],
+  stops: [0.0, 1.0],
+);
+final LinearGradient kThemePrimaryAngledLinearGradient = LinearGradient(
+  begin: Alignment.topRight,
+  end: Alignment.bottomLeft,
   colors: <Color>[
     kThemePrimaryBlue,
     kThemePrimaryPurple,
@@ -31,6 +47,7 @@ final LinearGradient kThemePrimaryLightLinearGradient = LinearGradient(
 
 final ThemeData kByteCareThemeData = ThemeData.light().copyWith(
   appBarTheme: kClearAppBarTheme,
+  primaryColor: kThemePrimaryBlue,
 );
 
 // This is the AppBarTheme for the 'clear' AppBar.
@@ -113,6 +130,7 @@ final TextStyle kButtonBody2TextStyle = GoogleFonts.openSans(
  */
 // Input Decoration for Form Fields, not sure about others, yet.
 final double kFormFieldSpacing = 20.0;
+const double kTextInputFieldElevation = 4.0;
 
 final kFormFieldInputDecoration = InputDecoration(
   filled: true,
@@ -146,3 +164,6 @@ final kFormFieldInputDecoration = InputDecoration(
     ),
   ),
 );
+
+
+final Duration kProcessDelayDuration = Duration(milliseconds: 350);
