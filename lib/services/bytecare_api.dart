@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' show LatLng;
 import 'package:http/http.dart' as http;
 
 /* Project-level Imports */
@@ -6,69 +9,161 @@ import 'package:http/http.dart' as http;
 import '../models/api_result.dart';
 
 class ByteCareAPI {
-  // Constant Variables
-  static final Map<String, Uri> routes = {
-    'signup': Uri(pathSegments: ['api', 'auth', 'signup']),
-    'login': Uri(pathSegments: ['api', 'auth', 'login']),
+  static ByteCareAPI _instance;
+
+  static const String namespace = 'api';
+
+  factory ByteCareAPI([Uri hostUri, http.Client client]) {
+    if (_instance == null) {
+      _instance = ByteCareAPI._internal(hostUri, client);
+    }
+
+    return _instance;
+  }
+
+  // Constants
+  final Map<String, Uri> routes = {
+    'signup': Uri(pathSegments: [namespace, 'auth', 'signup']),
+    'login': Uri(pathSegments: [namespace, 'auth', 'login']),
+    'clinic': Uri(pathSegments: [namespace, 'clinic']),
   };
 
-  // Member Variables
-  Uri hostUri;
+  // Instance Variables
+  Uri _hostUri;
+  http.Client _httpClient;
 
-  String user_token;
-  String user_id;
-  String username;
-  String user_email;
+  String _authToken;
+  String _userId;
+  String _email;
 
-  // Constructor
-  ByteCareAPI(this.hostUri);
-
-  // Static Variables
-  static ByteCareAPI instance;
-
-  // NOTE: Not sure if I need this yet, but it's if it becomes necessary.
-  static void initInstance(Uri hostUri) {
-    ByteCareAPI.instance = ByteCareAPI(hostUri);
+  // Instance Constructor
+  ByteCareAPI._internal(Uri host, [http.Client client]) {
+    _httpClient = client ?? http.Client();
+    this._hostUri = host;
   }
 
-  // Authorisation Functions
-  static Future<ApiResult> signup({
-    @required String username,
-    @required String phone,
+  // Getters and Setters
+  Uri getFullUrl([String subdir]) {
+    if (subdir == null || subdir.isEmpty) {
+      return _hostUri;
+    }
+
+    if (!routes.containsKey(subdir)) {
+      throw ArgumentError('The key `$subdir` does not exist in the routes.');
+    }
+
+    return _hostUri.resolveUri(routes[subdir]);
+  }
+
+  Future<bool> testConnection() async {
+    var resp = await _httpClient.head(getFullUrl());
+
+    print(resp);
+    if (resp.statusCode == 500) {
+      return false;
+    }
+
+    return true;
+  }
+
+  // Authorisation `auth` Functions
+  Future<ApiResult> signup({
     @required String emailAddress,
-    @required String password,
+    @required password,
+    String phoneNumber,
   }) async {
-    var route = ByteCareAPI.routes['signup'];
-    var api = ByteCareAPI.instance.hostUri.resolveUri(route);
+    var url = getFullUrl('signup');
+    var body = {
+      'email': emailAddress,
+      'password': password,
+    };
+    var headers = {
+      'Content-Type': 'application/json',
+    };
 
-    http.post(api);
+    var result = await _httpClient.post(
+      url,
+      body: jsonEncode(body),
+      headers: headers,
+    );
 
-    await Future.delayed(Duration(seconds: 15));
-    return ApiResult(code: 200, message: '');
+    if (result.statusCode == 200) {
+      return ApiResult(
+        code: 200,
+        hasError: false,
+        data: jsonDecode(result.body)['id'],
+      );
+    } else {
+      return ApiResult(
+        code: result.statusCode,
+        hasError: true,
+        message: result.body,
+      );
+    }
   }
 
-  static void login() {}
+  Future<ApiResult> login({
+    @required String emailAddress,
+    @required password,
+  }) async {
+    var url = getFullUrl('login');
+    var body = {
+      'email': emailAddress,
+      'password': password,
+    };
+    var headers = {
+      'Content-Type': 'application/json',
+    };
 
-  static void forgotPassword() {}
+    var result = await _httpClient.post(
+      url,
+      body: jsonEncode(body),
+      headers: headers,
+    );
 
-  static void resetPassword() {}
+    if (result.statusCode == 200) {
+      var data = jsonDecode(result.body);
 
-  // User Functions
-  static void getUserData() {}
+      _authToken = data['token'];
+      // Waiting for backend to implement.
+      // _userId = data['userid'];
+      // _email = data['email'];
 
-  static void updateUserData() {}
+      return ApiResult(
+        code: 200,
+      );
+    } else {
+      return ApiResult(
+        code: result.statusCode,
+        hasError: true,
+        message: result.body,
+      );
+    }
+  }
 
-  static void deleteUser() {}
+  void forgotPassword() {}
 
-  // User Address Functions
-  static void getUserAddresses() {}
+  void resetPassword() {}
 
-  static void addUserAddress() {}
+// User Functions
+  void getUserData() {}
 
-  static void updateUserAddress() {}
+  void updateUserData() {}
 
-  static void removeUserAddress() {}
+  void deleteUser() {}
 
-  // User Contact Functions
-  static void getUserContacts() {}
+// User Address Functions
+  void getUserAddresses() {}
+
+  void addUserAddress() {}
+
+  void updateUserAddress() {}
+
+  void removeUserAddress() {}
+
+// User Contact Functions
+  void getUserContacts() {}
+
+// Hospital Functions
+  Future<ApiResult> getClinicsDistance(LatLng location) async {}
 }
