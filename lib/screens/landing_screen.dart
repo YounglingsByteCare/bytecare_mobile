@@ -1,8 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:ms_undraw/ms_undraw.dart' show UnDraw, UnDrawIllustration;
-import 'package:http/http.dart' as http;
-import 'package:wave/config.dart';
-import 'package:wave/wave.dart';
 
 /* My Imports */
 // Constants
@@ -10,7 +6,6 @@ import '../constants/theme.dart';
 
 // Data Models
 import '../models/gradient_color.dart';
-import '../models/gradient_border_side.dart';
 
 // Widgets
 import '../widgets/information_carousel.dart';
@@ -21,7 +16,7 @@ import '../widgets/gradient_button.dart';
 import 'login_screen.dart';
 import 'registration_screen.dart';
 
-class WelcomeScreen extends StatelessWidget {
+class LandingScreen extends StatelessWidget {
   static final String id = 'welcome_screen';
 
   @override
@@ -42,17 +37,21 @@ class WelcomeScreen extends StatelessWidget {
             style: kTitle1TextStyle,
           ),
         ),
-        body: Padding(
+        body: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               InformationCarousel(
+                titleStyle: kTitle2TextStyle,
+                subtitleStyle: kSubtitle2TextStyle,
+                primaryColor: kThemePrimaryBlue,
+                backgroundColor: Colors.white,
                 carouselShadow: BoxShadow(
                   color: Colors.black.withAlpha(0x7),
                   offset: Offset(0, 1.0),
                   blurRadius: 3.0,
-                ) ,
+                ),
               ),
               Divider(
                 height: 40.0,
@@ -98,7 +97,9 @@ class WelcomeScreen extends StatelessWidget {
                       ),
                       child: Text(
                         'Login',
-                        style: kButtonBody1TextStyle,
+                        style: kButtonBody1TextStyle.copyWith(
+                          color: Colors.black,
+                        ),
                       ),
                     ),
                   ),
