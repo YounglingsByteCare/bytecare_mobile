@@ -18,11 +18,11 @@ class InformationCarousel extends StatefulWidget {
   final Color backgroundColor;
 
   InformationCarousel({
+    @required this.primaryColor,
     this.carouselShadow,
     this.titleStyle,
     this.subtitleStyle,
-    this.primaryColor,
-    this.backgroundColor,
+    this.backgroundColor = Colors.white,
   });
 
   @override
