@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 
 /* Project-level Imports */
@@ -16,23 +14,19 @@ class ProcessingManager {
   final ConnectionResultData loadingData;
 
   final Widget Function(ConnectionResultData, Widget, String) modalBuilder;
-  final Widget modalContainer;
 
   bool isComplete;
 
   ProcessingManager({
     this.modalBuilder,
-    this.modalContainer,
     this.successData,
     this.errorData,
     this.loadingData,
   });
 
   Widget build(Widget content) {
-    if (_state == ConnectionState.none) {
-      return modalContainer;
-    } else if (_state == ConnectionState.active) {
-      String message = loadingData.message ?? _result.message;
+    if (_state == ConnectionState.active) {
+      String message = loadingData.message ?? '';
       return modalBuilder(loadingData, content, message);
     } else if (_state == ConnectionState.done) {
       if (_result != null) {
