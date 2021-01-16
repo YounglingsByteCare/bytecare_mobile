@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:bytecare_mobile/constants/theme.dart';
 import 'package:flutter/material.dart';
 
 /* Project-level Imports */
@@ -5,126 +8,139 @@ import '../models/gradient_color.dart';
 import '../models/gradient_border_side.dart';
 
 class GradientButton extends StatelessWidget {
-  final CustomPainter _painter;
-  final Function onPressed;
+  final void Function() onPressed;
   final Widget child;
+
+  final GradientColor backgroundFill;
+  final BorderRadius borderRadius;
   final EdgeInsets padding;
   final EdgeInsets margin;
-  final BorderRadius borderRadius;
-  final GradientBorderSide borderSide;
+  final BoxShape shape;
+  final double radius;
 
   GradientButton({
-    @required GradientColor backgroundFill,
+    @required this.child,
     @required this.onPressed,
-    GradientBorderSide borderSide,
-    this.padding = EdgeInsets.zero,
-    this.margin = EdgeInsets.zero,
-    double elevation = 1.0,
-    Color shadowColor = Colors.black,
-    BorderRadius borderRadius,
-    this.child,
-  })  : borderRadius = borderRadius ?? BorderRadius.circular(4.0),
-        borderSide = borderSide ?? GradientBorderSide.zero,
-        _painter = _GradientButtonPainter(
-          bgFill: backgroundFill,
-          borderRadius: borderRadius,
-          borderSide: borderSide,
-          elevation: elevation >= 0 ? elevation : 0.0,
-          shadowColor: shadowColor,
-        );
+    this.borderRadius,
+    this.padding,
+    this.margin,
+    this.radius,
+    this.shape,
+    GradientColor backgroundFill,
+  })  : assert(padding == null || padding.isNonNegative),
+        assert(margin == null || margin.isNonNegative),
+        assert(shape == BoxShape.circle ? radius != null : true),
+        this.backgroundFill = backgroundFill ?? GradientColor(Colors.white);
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _painter,
-      child: Material(
-        type: MaterialType.transparency,
+    return shape == BoxShape.circle
+        ? _buildCircularShape()
+        : _buildRectangularShape();
+  }
+
+  Widget _buildRectangularShape() {
+    Widget current = Center(child: child);
+
+    if (padding != null) {
+      current = Padding(
+        padding: padding,
+        child: current,
+      );
+    }
+
+    current = DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: backgroundFill.fillAsGrad,
+        color: backgroundFill.fillAsColor,
         borderRadius: borderRadius,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: borderRadius,
-          child: Container(
-            color: Colors.transparent,
-            padding: padding,
-            child: Center(child: child),
-          ),
-        ),
       ),
+      child: current,
     );
-  }
-}
 
-class _GradientButtonPainter extends CustomPainter {
-  final BorderRadius borderRadius;
-  final GradientBorderSide borderSide;
-  final Color shadowColor;
-  final double elevation;
-  final GradientColor bgFill;
-
-  _GradientButtonPainter({
-    @required this.bgFill,
-    GradientBorderSide borderSide,
-    BorderRadius borderRadius,
-    this.shadowColor = Colors.black,
-    this.elevation = 1.0,
-  })  : assert(elevation > 0 ? shadowColor != null : true),
-        this.borderSide = borderSide ?? GradientBorderSide.zero,
-        this.borderRadius = borderRadius ?? BorderRadius.circular(0);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    Rect outerRect = Offset.zero & size;
-    RRect outerRRect = borderRadius.toRRect(outerRect);
-
-    Rect innerRect = Rect.fromLTWH(
-      borderSide.width,
-      borderSide.width,
-      size.width - borderSide.width * 2,
-      size.height - borderSide.width * 2,
+    current = ElevatedButton(
+      onPressed: onPressed,
+      style: ButtonStyle(
+        backgroundColor: MaterialStateProperty.all<Color>(Colors.transparent),
+        shape: MaterialStateProperty.all<OutlinedBorder>(
+            RoundedRectangleBorder(borderRadius: borderRadius)),
+        padding: MaterialStateProperty.all<EdgeInsets>(EdgeInsets.zero),
+      ),
+      child: current,
     );
-    RRect innerRRect = borderRadius
-        .subtract(BorderRadius.circular(borderSide.width))
-        .resolve(TextDirection.ltr)
-        .toRRect(innerRect);
 
-    if (elevation >= 0) {
-      Path shadowPath = Path();
-      shadowPath.addRRect(outerRRect);
-      canvas.drawShadow(shadowPath, shadowColor, elevation, false);
-    }
-
-    if (borderSide.width > 0) {
-      Paint borderPaint = Paint();
-      borderPaint.style = PaintingStyle.fill;
-      if (borderSide.isGradientBorder) {
-        Gradient g = borderSide.borderFill.fillValue;
-        borderPaint.shader = g.createShader(outerRect);
-      } else {
-        Color g = borderSide.borderFill.fillValue;
-        borderPaint.color = g;
-      }
-
-      // canvas.drawPath(borderRect, borderPaint);
-      canvas.drawDRRect(outerRRect, innerRRect, borderPaint);
-    }
-
-    Paint bgPaint = Paint();
-    bgPaint.style = PaintingStyle.fill;
-    Path bgRect;
-    if (bgFill.isGradient) {
-      Gradient g = bgFill.fillValue;
-      bgPaint.shader = g.createShader(innerRect);
-
-      bgRect = Path()..addRRect(innerRRect);
-    } else {
-      Color g = bgFill.fillValue;
-      bgPaint.color = g;
-
-      bgRect = Path()..addRRect(innerRRect);
-    }
-    canvas.drawPath(bgRect, bgPaint);
+    return current;
   }
 
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => oldDelegate != this;
+  Widget _buildCircularShape() {
+    Widget current = Center(child: child);
+
+    if (padding != null) {
+      current = Padding(
+        padding: padding,
+        child: current,
+      );
+    }
+
+    current = RawMaterialButton(
+      onPressed: onPressed,
+      shape: CircleBorder(),
+      child: current,
+    );
+
+    current = DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: backgroundFill.fillAsGrad,
+        color: backgroundFill.fillAsColor,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            offset: Offset(0, 1),
+            blurRadius: 3.0,
+            color: Colors.black26,
+          ),
+        ],
+      ),
+      child: current,
+    );
+
+    current = SizedBox(
+      width: radius * 2,
+      height: radius * 2,
+      child: current,
+    );
+
+    // current = DecoratedBox(
+    //   decoration: BoxDecoration(
+    //     gradient: backgroundFill.fillAsGrad,
+    //     color: backgroundFill.fillAsColor,
+    //     shape: BoxShape.circle,
+    //   ),
+    //   child: Padding(
+    //     padding: padding,
+    //     child: current,
+    //   ),
+    // );
+
+    // current = SizedBox(
+    //   width: radius * 2,
+    //   height: radius * 2,
+    //   child: RawMaterialButton(
+    //     onPressed: onPressed,
+    //     constraints: BoxConstraints(),
+    //     shape: CircleBorder(),
+    //     elevation: 5.0,
+    //     child: current,
+    //   ),
+    // );
+
+    if (margin != null) {
+      current = Padding(
+        padding: margin,
+        child: current,
+      );
+    }
+
+    return current;
+  }
 }
