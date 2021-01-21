@@ -25,7 +25,9 @@ class ByteCareAPI {
   final Map<String, Uri> routes = {
     'signup': Uri(pathSegments: [namespace, 'auth', 'signup']),
     'login': Uri(pathSegments: [namespace, 'auth', 'login']),
-    'clinic': Uri(pathSegments: [namespace, 'clinic']),
+    'appointment': Uri(pathSegments: [namespace, 'appointment']),
+    'appointments': Uri(pathSegments: [namespace, 'appointments']),
+    'hospitals': Uri(pathSegments: [namespace, 'hospitals']),
   };
 
   // Instance Variables
@@ -33,8 +35,6 @@ class ByteCareAPI {
   http.Client _httpClient;
 
   String _authToken;
-  String _userId;
-  String _email;
 
   // Instance Constructor
   ByteCareAPI._internal(Uri host, [http.Client client]) {
@@ -55,10 +55,17 @@ class ByteCareAPI {
     return _hostUri.resolveUri(routes[subdir]);
   }
 
+  String get authToken => _authToken;
+
+  set authToken(String token) {
+    if (_authToken == null) {
+      _authToken = token;
+    }
+  }
+
   Future<bool> testConnection() async {
     var resp = await _httpClient.head(getFullUrl());
 
-    print(resp);
     if (resp.statusCode == 500) {
       return false;
     }
@@ -70,7 +77,6 @@ class ByteCareAPI {
   Future<ApiResult> signup({
     @required String emailAddress,
     @required password,
-    String phoneNumber,
   }) async {
     var url = getFullUrl('signup');
     var body = {
@@ -91,7 +97,6 @@ class ByteCareAPI {
       return ApiResult(
         code: 200,
         hasError: false,
-        data: jsonDecode(result.body)['id'],
       );
     } else {
       return ApiResult(
@@ -165,5 +170,56 @@ class ByteCareAPI {
   void getUserContacts() {}
 
 // Hospital Functions
-  Future<ApiResult> getClinicsDistance(LatLng location) async {}
+  Future<ApiResult> getClinics() async {
+    var url = getFullUrl('hospitals');
+    var headers = {'Authorization': 'Bearer $_authToken}'};
+
+    var result = await _httpClient.get(url, headers: headers);
+
+    if (result.statusCode == 200) {
+      var data = jsonDecode(result.body);
+
+      return ApiResult(
+        code: result.statusCode,
+        hasError: false,
+        data: data,
+      );
+    } else {
+      return ApiResult(
+        code: result.statusCode,
+        hasError: true,
+      );
+    }
+  }
+
+  // Appointment Functions
+  Future<ApiResult> getAppointments() async {
+    var url = getFullUrl('appointments');
+    var headers = {'Authorization': 'Bearer $_authToken}'};
+
+    var result = await _httpClient.get(url, headers: headers);
+
+    if (result.statusCode == 200) {
+      print('power');
+      var data = jsonDecode(result.body);
+      print('Appointment Data: $data}');
+
+      return ApiResult(
+        code: result.statusCode,
+        hasError: false,
+        data: data,
+      );
+    } else {
+      return ApiResult(
+        code: result.statusCode,
+        hasError: true,
+        message: 'Failed to load Appointments',
+        data: result.body,
+      );
+    }
+  }
+
+  void logout() {
+    _authToken = null;
+  }
 }

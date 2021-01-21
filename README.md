@@ -7,3 +7,7 @@ ByteCare was formed to counteract the problem of overcrowding in the waiting roo
 ByteCare is a ticket management that allows for the easy management of appointment at medical
  centres, thus reducing overcrowding in waiting rooms as well as reducing the chances of physical
   contact with sick indiciduals.
+  
+Requirements:
+- Minimum SDK version 18 (Android 4.3 Jellybean)
+  Because of flutter_secure_storage plugin.

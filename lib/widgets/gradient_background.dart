@@ -19,19 +19,27 @@ class GradientBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: themeData,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: backgroundFill.fillAsGrad, // NOTE: Can I pass null here?
-          color: backgroundFill.fillAsColor,
-        ),
-        child: ignoreSafeArea
-            ? SafeArea(
-                child: child,
-              )
-            : child,
+    Widget current = child;
+
+    if (!ignoreSafeArea) {
+      current = SafeArea(child: child);
+    }
+
+    current = Container(
+      decoration: BoxDecoration(
+        gradient: backgroundFill.fillAsGrad,
+        color: backgroundFill.fillAsColor,
       ),
+      child: current,
     );
+
+    if (themeData != null) {
+      current = Theme(
+        data: themeData,
+        child: current,
+      );
+    }
+
+    return current;
   }
 }

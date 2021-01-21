@@ -34,6 +34,15 @@ final LinearGradient kThemePrimaryAngledLinearGradient = LinearGradient(
   ],
   stops: [0.0, 1.0],
 );
+final LinearGradient kThemePrimaryHorizontalLinearGradient = LinearGradient(
+  begin: Alignment.centerLeft,
+  end: Alignment.centerRight,
+  colors: <Color>[
+    kThemePrimaryBlue,
+    kThemePrimaryPurple,
+  ],
+  stops: [0.0, 1.0],
+);
 final LinearGradient kThemePrimaryLightLinearGradient = LinearGradient(
   begin: Alignment.topCenter,
   end: Alignment.bottomCenter,
@@ -72,17 +81,17 @@ final TextStyle kTitle2TextStyle = GoogleFonts.montserrat(
 );
 
 final TextStyle kSubtitleTextStyle = GoogleFonts.montserrat(
-  color: Colors.grey.shade700,
+  color: Colors.black.withOpacity(.8),
   fontSize: 24.0,
 );
 
 final TextStyle kSubtitle1TextStyle = GoogleFonts.montserrat(
-  color: Colors.grey.shade700,
+  color: Colors.black.withOpacity(.8),
   fontSize: 24.0,
 );
 
 final TextStyle kSubtitle2TextStyle = GoogleFonts.montserrat(
-  color: Colors.grey.shade700,
+  color: Colors.black.withOpacity(.8),
   fontSize: 16.0,
 );
 
@@ -165,5 +174,5 @@ final kFormFieldInputDecoration = InputDecoration(
   ),
 );
 
-
 final Duration kProcessDelayDuration = Duration(milliseconds: 350);
+final Duration kProcessErrorDelayDuration = Duration(seconds: 5);

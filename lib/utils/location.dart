@@ -9,7 +9,7 @@ Future<Position> getCurrentLocation() async {
     return Future.error('Location services are disabled');
   }
 
-  permission = await Geolocator.checkPermission();
+  permission = await getLocationPermissionState();
   if (permission == LocationPermission.deniedForever) {
     return Future.error(
         'Location permission are permanently denied, we cannot request '
@@ -17,7 +17,7 @@ Future<Position> getCurrentLocation() async {
   }
 
   if (permission == LocationPermission.denied) {
-    permission = await Geolocator.requestPermission();
+    permission = await requestLocationPermission();
     if (permission != LocationPermission.whileInUse &&
         permission != LocationPermission.always) {
       return Future.error('Location permissions are denied (actual value: '
@@ -27,3 +27,9 @@ Future<Position> getCurrentLocation() async {
 
   return await Geolocator.getCurrentPosition();
 }
+
+Future<LocationPermission> getLocationPermissionState() async =>
+    await Geolocator.checkPermission();
+
+Future<LocationPermission> requestLocationPermission() async =>
+    await Geolocator.requestPermission();

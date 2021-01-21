@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import '../models/gradient_color.dart';
 import '../models/gradient_border_side.dart';
 
+// Interfaces
+import '../interfaces/application_page.dart';
+
 Path buildCurvePath(
   Size size, {
   double archHeight,
@@ -43,18 +46,23 @@ Path buildCurvePath(
 }
 
 class BottomAppbarItem {
-  final void Function(Widget) onPressed;
-  final Widget page;
+  final void Function(Widget, int) onPressed;
+  final ApplicationPage page;
   final IconData icon;
   final String label;
-  final bool isCurrent;
+  bool _isCurrent;
 
   BottomAppbarItem(
       {@required this.onPressed,
       @required this.icon,
       this.page,
       this.label,
-      this.isCurrent});
+      bool isCurrent = false})
+      : _isCurrent = isCurrent;
+
+  get isCurrent => _isCurrent;
+
+  set isCurrent(val) => _isCurrent = val;
 }
 
 class ArchedBottomAppbar extends StatelessWidget {
@@ -70,32 +78,6 @@ class ArchedBottomAppbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var itemsRow = Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: items.map((e) {
-        return Expanded(
-          child: Material(
-            type: MaterialType.transparency,
-            child: InkWell(
-              onTap: () => e.onPressed(e.page),
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: SizedBox(
-                  height: apparentHeight, // Basically the body size.
-                  child: Center(
-                    child: Icon(
-                      e.icon,
-                      color: e.isCurrent ? currentItemColor : Colors.black,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-
     return SizedOverflowBox(
       size: Size.fromHeight(apparentHeight),
       alignment: Alignment.bottomCenter,
@@ -115,10 +97,46 @@ class ArchedBottomAppbar extends StatelessWidget {
               borderWidth: 2.0,
               archHeight: archHeight,
             ),
-            child: itemsRow,
+            child: _buildItemsRow(items),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildItemsRow(List<BottomAppbarItem> appbarItems) {
+    List<Widget> itemsRow = [];
+
+    for (var e in appbarItems) {
+      Widget current = Align(
+        alignment: Alignment.bottomCenter,
+        child: SizedBox(
+          height: apparentHeight, // Basically the body size.
+          child: Center(
+            child: Icon(
+              e.icon,
+              color: e.isCurrent ? currentItemColor : Colors.black,
+            ),
+          ),
+        ),
+      );
+
+      current = Expanded(
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: () => e.onPressed(e.page.asWidget(), appbarItems.indexOf(e)),
+            child: current,
+          ),
+        ),
+      );
+
+      itemsRow.add(current);
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: itemsRow,
     );
   }
 }

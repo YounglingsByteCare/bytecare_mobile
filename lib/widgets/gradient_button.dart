@@ -1,11 +1,7 @@
-import 'dart:math';
-
-import 'package:bytecare_mobile/constants/theme.dart';
 import 'package:flutter/material.dart';
 
 /* Project-level Imports */
 import '../models/gradient_color.dart';
-import '../models/gradient_border_side.dart';
 
 class GradientButton extends StatelessWidget {
   final void Function() onPressed;
@@ -60,11 +56,11 @@ class GradientButton extends StatelessWidget {
 
     current = ElevatedButton(
       onPressed: onPressed,
-      style: ButtonStyle(
-        backgroundColor: MaterialStateProperty.all<Color>(Colors.transparent),
-        shape: MaterialStateProperty.all<OutlinedBorder>(
-            RoundedRectangleBorder(borderRadius: borderRadius)),
-        padding: MaterialStateProperty.all<EdgeInsets>(EdgeInsets.zero),
+      style: ElevatedButton.styleFrom(
+        primary: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: borderRadius),
+        padding: EdgeInsets.zero,
+        shadowColor: Colors.black54,
       ),
       child: current,
     );
