@@ -12,13 +12,13 @@
          FlutterApplication and put your custom class here. -->
     <application
         android:name="io.flutter.app.FlutterApplication"
-        android:icon="@mipmap/ic_launcher"
-        android:label="bytecare_mobile"
         android:allowBackup="true"
-        android:fullBackupContent="false">
+        android:fullBackupContent="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="bytecare_mobile">
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyCtDqu8YyaKoJtIuTrAg-JIiSf_3DweGXw" />
+            android:value="${mapsApiKey}" />
 
         <activity
             android:name=".MainActivity"
