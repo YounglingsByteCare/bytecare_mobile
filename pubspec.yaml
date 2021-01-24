@@ -1,0 +1,43 @@
+name: bytecare_mobile
+description: A new Flutter project.
+
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.7.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.0
+
+  # UI Modules
+  animated_splash_screen: ^1.0.1+2
+  carousel_slider: ^2.3.1
+  flutter_datetime_formfield: ^0.1.2
+  flutter_spinkit: ^4.1.2+1
+  google_fonts: ^1.1.1
+  google_maps_flutter: ^1.0.10
+  line_awesome_flutter: ^1.0.1
+  ms_undraw: ^2.2.0+15
+  wave: ^0.1.0
+
+  # Functionality Modules
+  flutter_secure_storage: ^3.3.5
+  form_field_validator: ^1.0.1
+  geolocator: ^6.1.13
+  http: ^0.12.2
+  provider: ^4.3.3
+  shared_preferences: ^0.5.12+4
+  uuid: ^2.2.2
+  open_settings: ^1.0.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
