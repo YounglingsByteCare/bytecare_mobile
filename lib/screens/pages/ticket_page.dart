@@ -4,6 +4,7 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:ms_undraw/ms_undraw.dart';
 import 'package:intl/intl.dart';
+import 'package:enum_to_string/enum_to_string.dart';
 
 /* Project-level Imports */
 // Theme
@@ -325,6 +326,7 @@ class _TicketPageState extends State<TicketPage> {
                 return _buildTicketData(
                   hospitalName: appointment.hospitalSelected.name,
                   datetime: _dateFormat.format(appointment.date),
+                  wardType: EnumToString.convertToString(appointment.wardType),
                   completionStatus: 'Incomplete',
                   reason: appointment.reason,
                 );
@@ -339,6 +341,7 @@ class _TicketPageState extends State<TicketPage> {
   _buildTicketData({
     String hospitalName,
     String datetime,
+    String wardType,
     String completionStatus,
     String reason,
   }) {
@@ -382,6 +385,25 @@ class _TicketPageState extends State<TicketPage> {
             ),
           ),
         ),
+        SizedBox(height: 8.0),
+        TextField(
+          controller: TextEditingController(text: wardType),
+          readOnly: true,
+          style: kBody1TextStyle,
+          decoration: InputDecoration(
+            prefixIcon: Icon(LineAwesomeIcons.clock),
+            suffixIcon: IconButton(
+              onPressed: () async {
+                _saveToClipboard(wardType);
+              },
+              icon: Icon(LineAwesomeIcons.clipboard),
+            ),
+            labelText: 'Ward Type',
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+          ),
+        ),
         SizedBox(height: 16.0),
         TextField(
           controller: TextEditingController(text: completionStatus),
@@ -405,7 +427,8 @@ class _TicketPageState extends State<TicketPage> {
         TextField(
           controller: TextEditingController(text: reason),
           readOnly: true,
-          maxLines: 8,
+          minLines: 1,
+          maxLines: 6,
           textAlignVertical: TextAlignVertical.top,
           style: kBody1TextStyle,
           decoration: InputDecoration(
