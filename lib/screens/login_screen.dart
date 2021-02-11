@@ -20,14 +20,13 @@ import '../models/gradient_color.dart';
 import '../models/processing_dialog_theme.dart';
 
 // Controllers
+import '../controllers/account.dart';
+import '../controllers/hospital_marker.dart';
 import '../controllers/processing_view.dart';
 
 // Services
-import '../services/byte_care_api.dart';
 import '../services/auth_storage.dart';
-
-// Providers
-import '../providers/byte_care_api_notifier.dart';
+import '../services/byte_care_api.dart';
 
 // Widgets
 import '../widgets/gradient_background.dart';
@@ -38,6 +37,7 @@ import '../widgets/processing_dialog.dart';
 import 'application_screen.dart';
 import 'forgot_password_screen.dart';
 import 'registration_screen.dart';
+import 'errors/no_server.dart';
 
 class LoginScreen extends StatefulWidget {
   static String id = 'login_screen';
@@ -52,28 +52,32 @@ class _LoginScreenState extends State<LoginScreen> {
   ProcessingViewController _processState;
 
   TextEditingController _emailController =
-      TextEditingController(text: 'jesseb727@gmail.com');
+      TextEditingController(text: 'orange@gmail.com');
   TextEditingController _passwordController =
-      TextEditingController(text: 'Djjesse19!');
+      TextEditingController(text: 'tomato');
 
   @override
   void initState() {
     super.initState();
     _processState = ProcessingViewController(
       modalBuilder: (data, content, message) {
-        print('Processing State: $message');
         return Stack(
+          fit: StackFit.loose,
+          alignment: AlignmentDirectional.center,
           children: [
             content,
             Positioned.fill(
               child: Material(
                 color: Colors.black45,
-                child: ProcessingDialog(
-                  color: data.color,
-                  icon: data.icon,
-                  message: message,
-                  showWave: data.waveColor != null,
-                  waveColor: data.waveColor,
+                child: Align(
+                  alignment: Alignment.center,
+                  child: ProcessingDialog(
+                    color: data.color,
+                    icon: data.icon,
+                    message: message,
+                    showWave: false,
+                    waveColor: data.waveColor,
+                  ),
                 ),
               ),
             ),
@@ -106,8 +110,8 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       loadingData: ProcessingDialogThemeModel(
         color: kThemeColorPrimary,
-        waveColor: Color.lerp(kThemeColorPrimary, kThemeColorSecondary, .5),
         message: 'We\'re signing you in, enjoy your stay.',
+        waveColor: kThemeColorSecondary,
         icon: SpinKitPulse(
           color: Colors.white,
         ),
@@ -117,15 +121,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GradientBackground(
-      theme: kByteCareThemeData,
-      background: GradientColorModel(kThemeGradientPrimaryAngled),
-      ignoreSafeArea: true,
-      child: _processState.build(_buildContent()),
+    return WillPopScope(
+      onWillPop: () async {
+        if (_processState == null) return true;
+        if (_processState.hasVisibleContent()) return false;
+        return true;
+      },
+      child: GradientBackground(
+        theme: kByteCareThemeData,
+        background: GradientColorModel(kThemeGradientPrimaryAngled),
+        ignoreSafeArea: true,
+        child: _processState.build(_buildContent(context)),
+      ),
     );
   }
 
-  Scaffold _buildContent() {
+  Scaffold _buildContent(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -306,28 +317,42 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  T _getProvider<T>(BuildContext context, [bool listen = false]) {
+    return Provider.of<T>(context, listen: listen);
+  }
+
   void _loginUser() async {
     var valid = _formKey.currentState.validate();
     if (!valid) {
       return;
     }
 
-    // var token = context.read<ByteCareApiNotifier>().authToken;
-    var api = ByteCareApi.getInstance();
-
     setState(() {
       _processState.begin();
     });
 
-    var loginResult = await api.login(
-      _emailController.text,
-      _passwordController.text,
-    );
+    var loginResult;
+
+    try {
+      loginResult = await _getProvider<AccountController>(this.context).login(
+        _emailController.text,
+        _passwordController.text,
+      );
+    } on ServerNotAvailableException {
+      _processState.reset();
+
+      Navigator.push(
+        this.context,
+        MaterialPageRoute(builder: ((context) => NoServer(widget))),
+      );
+      return;
+    }
 
     if (loginResult.code == 200) {
       var token = loginResult.data['token'];
-      context.read<ByteCareApiNotifier>().authToken = token;
+      print('Storing Login Token');
       AuthStorage.getInstance().storeLoginToken(token);
+      print('Completed Storing');
       setState(() {
         _processState.complete(
           loginResult.code,
@@ -335,7 +360,9 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       });
 
-      await Future.delayed(kProcessDelayDuration);
+      await _getProvider<AccountController>(this.context).loadUser(
+        _getProvider<HospitalMarkerController>(this.context).hospitals,
+      );
 
       Navigator.pushNamedAndRemoveUntil(
           context, ApplicationScreen.id, (r) => false);

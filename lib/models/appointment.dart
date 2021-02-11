@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:enum_to_string/enum_to_string.dart';
 
 /* Project-level Imports */
 // Models
@@ -12,6 +13,7 @@ enum WardType {
 }
 
 class AppointmentModel {
+  final String id;
   final PatientModel patientSelected;
   final HospitalModel hospitalSelected;
   final DateTime date;
@@ -19,6 +21,7 @@ class AppointmentModel {
   final String reason;
 
   AppointmentModel({
+    @required this.id,
     @required this.patientSelected,
     @required this.hospitalSelected,
     @required this.date,
@@ -26,11 +29,24 @@ class AppointmentModel {
     @required this.reason,
   });
 
-  static AppointmentModel parse(Map<String, dynamic> data) {
-    assert(data.containsKey('patient_selected'));
-    assert(data.containsKey('hospital_selected'));
-    assert(data.containsKey('appointment_date'));
-    assert(data.containsKey('ward_type'));
-    assert(data.containsKey('reason_for_visit'));
+  Map<String, dynamic> asMap([bool includeId = false]) {
+    if (includeId) {
+      return {
+        'id': id,
+        'patient_selected': patientSelected.idNumber,
+        'hospital_selected': hospitalSelected.id,
+        'appointment_date': date.toUtc().toIso8601String(),
+        'ward_type': EnumToString.convertToString(wardType),
+        'reason_for_visit': reason,
+      };
+    } else {
+      return {
+        'patient_selected': patientSelected.idNumber,
+        'hospital_selected': hospitalSelected.id,
+        'appointment_date': date.toUtc().toIso8601String(),
+        'ward_type': EnumToString.convertToString(wardType),
+        'reason_for_visit': reason,
+      };
+    }
   }
 }

@@ -6,6 +6,7 @@ import '../models/gradient_color.dart';
 class GradientButton extends StatelessWidget {
   final void Function() onPressed;
   final Widget child;
+  final GradientColorModel disabledBackground;
   final GradientColorModel background;
   final BorderRadius borderRadius;
   final EdgeInsets padding;
@@ -23,10 +24,13 @@ class GradientButton extends StatelessWidget {
     this.margin,
     this.radius,
     this.shape,
+    GradientColorModel disabledBackground,
     GradientColorModel background,
   })  : assert(padding == null || padding.isNonNegative),
         assert(margin == null || margin.isNonNegative),
         assert(shape == BoxShape.circle ? borderRadius == null : true),
+        this.disabledBackground =
+            disabledBackground ?? GradientColorModel(Colors.grey.shade400),
         this.background = background ?? GradientColorModel(Colors.white);
 
   @override
@@ -89,8 +93,12 @@ class GradientButton extends StatelessWidget {
 
     current = DecoratedBox(
       decoration: BoxDecoration(
-        gradient: background.fillAsGrad,
-        color: background.fillAsColor,
+        gradient: onPressed == null
+            ? disabledBackground.fillAsGrad
+            : background.fillAsGrad,
+        color: onPressed == null
+            ? disabledBackground.fillAsColor
+            : background.fillAsColor,
         borderRadius: borderRadius,
       ),
       child: current,

@@ -69,6 +69,7 @@ class DateTimeFormField extends StatelessWidget {
             } else if (onlyTime) {
               time = await showTimePicker(
                 context: context,
+                initialEntryMode: TimePickerEntryMode.input,
                 initialTime: TimeOfDay.fromDateTime(state.value),
               );
               if (time != null) {

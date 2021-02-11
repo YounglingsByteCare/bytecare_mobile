@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import '../models/api_result.dart';
 import '../models/processing_dialog_theme.dart';
 
-class ProcessingViewController {
+class ProcessingViewController extends ChangeNotifier {
   ConnectionState connectionState = ConnectionState.none;
   ApiResultModel _result;
 
@@ -25,6 +25,11 @@ class ProcessingViewController {
     this.errorData,
     this.loadingData,
   });
+
+  bool hasVisibleContent() {
+    return connectionState == ConnectionState.active ||
+        (connectionState == ConnectionState.done && _result != null);
+  }
 
   Widget build(Widget content) {
     if (connectionState == ConnectionState.active) {
@@ -50,11 +55,13 @@ class ProcessingViewController {
   void begin() {
     _result = null;
     connectionState = ConnectionState.active;
+    notifyListeners();
   }
 
   ApiResultModel complete(int code, String message, [bool hasError = false]) {
     _result = ApiResultModel(code: code, message: message, hasError: hasError);
     connectionState = ConnectionState.done;
+    notifyListeners();
     return _result;
   }
 
@@ -65,6 +72,7 @@ class ProcessingViewController {
   void reset() {
     _result = null;
     connectionState = ConnectionState.none;
+    notifyListeners();
   }
 
   bool get hasError => _result.hasError;

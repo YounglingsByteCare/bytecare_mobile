@@ -12,13 +12,11 @@ import '../theme/gradients.dart';
 import '../models/gradient_color.dart';
 
 // Controllers
+import '../controllers/account.dart';
 import '../controllers/map_view.dart';
 
 // Interfaces
 import '../interfaces/application_page.dart';
-
-// Providers
-import '../providers/byte_care_api_notifier.dart';
 
 // Sevices
 import '../services/auth_storage.dart';
@@ -30,7 +28,7 @@ import '../widgets/arched_bottom_appbar.dart';
 
 // Screens
 import './login_screen.dart';
-import './pages/blank_application_page.dart';
+import './pages/account_page.dart';
 import './pages/clinic_page.dart';
 import './pages/ticket_page.dart';
 
@@ -47,9 +45,16 @@ class _ApplicationScreenState extends State<ApplicationScreen>
   TabController _pageTabController;
   List<BottomAppbarItem> pages;
 
+  T _getProvider<T>(BuildContext context, [bool listen = false]) =>
+      Provider.of<T>(context, listen: listen);
+
   @override
   void initState() {
     super.initState();
+    _getProvider<AccountController>(this.context).addListener(() {
+      setState(() {});
+    });
+
     _mapViewController = MapViewController(
       mapIcon: LineAwesomeIcons.list,
       listIcon: LineAwesomeIcons.map,
@@ -61,16 +66,12 @@ class _ApplicationScreenState extends State<ApplicationScreen>
           viewController: _mapViewController,
           fabIcon: _mapViewController.currentIcon,
           fabPressed: () {
-            setState(() {
-              _mapViewController.toggleView();
-            });
+            setState(() => _mapViewController.toggleView());
           },
         ),
         onPressed: (context, page, index) {
           if (_pageTabController.index != index) {
-            setState(() {
-              _pageTabController.index = index;
-            });
+            setState(() => _pageTabController.index = index);
           }
         },
         icon: LineAwesomeIcons.home,
@@ -80,8 +81,42 @@ class _ApplicationScreenState extends State<ApplicationScreen>
       ),
       BottomAppbarItem(
         page: TicketPage(
+          pageUpdater: _setPageOfType,
           fabIcon: LineAwesomeIcons.times,
-          fabPressed: () {},
+          fabPressed: (caller) async {
+            var c = caller as TicketPage;
+
+            if (c.selectedPatient == null) {
+              return;
+            }
+
+            c.processState.begin();
+
+            var result = await _getProvider<AccountController>(this.context)
+                .cancelAppointment(c.appointmentId);
+
+            if (result.code == 200) {
+              setState(() {
+                c.processState.complete(
+                    result.code,
+                    'Successfully Canceled '
+                    'Appointment');
+              });
+
+              await Future.delayed(kProcessDelayDuration);
+
+              c.processState.reset();
+            } else {
+              c.processState.completeWithError(
+                result.code,
+                result.message,
+              );
+
+              await Future.delayed(kProcessErrorDelayDuration);
+
+              c.processState.reset();
+            }
+          },
         ),
         onPressed: (context, page, index) {
           if (_pageTabController.index != index) {
@@ -95,19 +130,29 @@ class _ApplicationScreenState extends State<ApplicationScreen>
         label: 'Bookings',
       ),
       BottomAppbarItem(
-        page: BlankApplicationPage(),
-        onPressed: (context, page, index) {
-          Provider.of<ByteCareApiNotifier>(context, listen: false).authToken =
-              null;
-          AuthStorage.getInstance().removeLoginToken();
+        page: AccountPage(
+          fabIcon: LineAwesomeIcons.alternate_sign_out,
+          fabPressed: () {
+            _getProvider<AccountController>(this.context).logout();
+            AuthStorage.getInstance().removeLoginToken();
 
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            LoginScreen.id,
-            (route) => false,
-          );
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              LoginScreen.id,
+              (route) => false,
+            );
+          },
+        ),
+        icon: LineAwesomeIcons.user,
+        active: false,
+        label: 'Account',
+        onPressed: (context, page, index) {
+          if (_pageTabController.index != index) {
+            setState(() {
+              _pageTabController.index = index;
+            });
+          }
         },
-        icon: LineAwesomeIcons.alternate_sign_out,
       ),
     ];
 
@@ -133,7 +178,7 @@ class _ApplicationScreenState extends State<ApplicationScreen>
     return GradientBackground(
       theme: kByteCareThemeData,
       background: GradientColorModel(kThemeGradientPrimaryAngled),
-      ignoreSafeArea: true,
+      ignoreSafeArea: false,
       child: _build(),
     );
   }
@@ -170,6 +215,16 @@ class _ApplicationScreenState extends State<ApplicationScreen>
 
   ApplicationPage _getCurrentAppbarPage() =>
       pages[_pageTabController.index].page;
+
+  void _setPageOfType(Type pageType) {
+    for (int i = 0; i < pages.length; i++) {
+      if (pages[i].page.runtimeType == pageType) {
+        if (_pageTabController.index != i) {
+          setState(() => _pageTabController.index = i);
+        }
+      }
+    }
+  }
 
   void _updateSelectedTab(int index) {
     for (int i = 0; i < pages.length; i++) {

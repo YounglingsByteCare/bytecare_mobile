@@ -48,6 +48,7 @@ class BottomAppbarItem {
   final ApplicationPage page;
   final IconData icon;
   final String label;
+  final bool isMini;
   bool _isActive;
 
   BottomAppbarItem({
@@ -55,6 +56,7 @@ class BottomAppbarItem {
     @required this.icon,
     this.page,
     this.label,
+    this.isMini = false,
     bool active = false,
   }) : _isActive = active;
 
@@ -110,29 +112,58 @@ class ArchedBottomAppbar extends StatelessWidget {
     List<Widget> itemsRow = [];
 
     for (var e in items) {
-      Widget current = Align(
-        alignment: Alignment.bottomCenter,
-        child: SizedBox(
-          height: bodyHeight,
-          child: Center(
-            child: Icon(
-              e.icon,
-              color: e.isActive ? currentItemColor : Colors.black,
-            ),
-          ),
-        ),
+      Widget current = Icon(
+        e.icon,
+        color: e.isActive ? currentItemColor : Colors.black,
       );
 
-      current = Expanded(
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            onTap: () =>
-                e.onPressed(this.context, e.page.asWidget(), items.indexOf(e)),
-            child: current,
+      if (e.isMini) {
+        current = Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: 8.0,
+              horizontal: 24.0,
+            ),
+            child: SizedBox(
+              height: bodyHeight,
+              child: Center(
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(256.0),
+                    onTap: () => e.onPressed(
+                        this.context, e.page.asWidget(), items.indexOf(e)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: current,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
-      );
+        );
+      } else {
+        current = Expanded(
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              onTap: () => e.onPressed(
+                  this.context, e.page.asWidget(), items.indexOf(e)),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: SizedBox(
+                  height: bodyHeight,
+                  child: Center(
+                    child: current,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }
 
       itemsRow.add(current);
     }

@@ -21,14 +21,8 @@ import '../../models/gradient_color.dart';
 import '../../models/hospital.dart';
 
 // Controllers
-import '../../controllers/map_view.dart';
 import '../../controllers/hospital_marker.dart';
-
-// Providers
-import '../../providers/byte_care_api_notifier.dart';
-
-// Services
-import '../../services/byte_care_api.dart';
+import '../../controllers/map_view.dart';
 
 // Interfaces
 import '../../interfaces/application_page.dart';
@@ -38,7 +32,6 @@ import '../../widgets/gradient_button.dart';
 
 // Screens
 import '../book_appointment_screen.dart';
-// import '../errors/denied_location_permission.dart';
 
 class ClinicPage extends StatefulWidget implements ApplicationPage {
   final MapViewController viewController;
@@ -72,10 +65,9 @@ class ClinicPage extends StatefulWidget implements ApplicationPage {
 class _ClinicPageState extends State<ClinicPage> {
   Completer<GoogleMapController> _mapController = Completer();
   LatLng _userLocation;
-  BuildContext _context;
 
   void _updateUserLocation() async {
-    if (_context == null) {
+    if (this.context == null) {
       return;
     }
 
@@ -88,10 +80,16 @@ class _ClinicPageState extends State<ClinicPage> {
     }
 
     final GoogleMapController c = await _mapController.future;
+
+    if (c == null) {
+      return;
+    }
+
     _userLocation = LatLng(loc.latitude, loc.longitude);
 
     setState(() {
-      _getApiNotifier(_context).hospitalController.userLocation = _userLocation;
+      _getProvider<HospitalMarkerController>(this.context).userLocation =
+          _userLocation;
     });
 
     c.animateCamera(
@@ -100,28 +98,11 @@ class _ClinicPageState extends State<ClinicPage> {
   }
 
   void _getHospitalInfo() async {
-    if (_context == null) {
+    if (this.context == null) {
       return;
     }
 
-    var token = _getApiNotifier(_context).authToken;
-    var result = await ByteCareApi.getInstance().getHospitals(token);
-    // _markerManager.clearMarkers();
-
-    if (result.code == 200) {
-      for (var hospital in result.data) {
-        var pos = hospital['point'];
-        setState(() {
-          var m = HospitalModel(
-            id: hospital['_id']['\$oid'],
-            name: hospital['hospital_name'],
-            location: LatLng(pos[0], pos[1]),
-          );
-
-          _getApiNotifier(_context).hospitalController.upsertHospital(m);
-        });
-      }
-    }
+    _getProvider<HospitalMarkerController>(this.context).loadHospitals();
   }
 
   Future<Uint8List> createUserMarkerBitmap(
@@ -178,7 +159,7 @@ class _ClinicPageState extends State<ClinicPage> {
   }
 
   void _onLocationMarkerClick(HospitalModel marker) {
-    if (_context == null) {
+    if (this.context == null) {
       return;
     }
 
@@ -191,9 +172,8 @@ class _ClinicPageState extends State<ClinicPage> {
     }
   }
 
-  ByteCareApiNotifier _getApiNotifier(BuildContext context,
-      [bool listen = false]) {
-    return Provider.of<ByteCareApiNotifier>(context, listen: listen);
+  T _getProvider<T>(BuildContext context, [bool listen = false]) {
+    return Provider.of<T>(context, listen: listen);
   }
 
   @override
@@ -203,14 +183,13 @@ class _ClinicPageState extends State<ClinicPage> {
     });
 
     Future.delayed(Duration(seconds: 0)).then((value) {
-      _getApiNotifier(_context).hospitalController.onTap =
+      _getProvider<HospitalMarkerController>(this.context).onTap =
           _onLocationMarkerClick;
-      createUserMarkerBitmap(24, 2.0).then((imgData) {
+      createUserMarkerBitmap(32, 2.0).then((imgData) {
         var bmp = BitmapDescriptor.fromBytes(imgData);
 
         setState(() {
-          _getApiNotifier(_context)
-              .hospitalController
+          _getProvider<HospitalMarkerController>(this.context)
               .updateUserMarker(icon: bmp);
         });
       });
@@ -218,27 +197,8 @@ class _ClinicPageState extends State<ClinicPage> {
     super.initState();
   }
 
-  // @override
-  // void didUpdateWidget(covariant ClinicPage oldWidget) async {
-  //   var permissionState = await getLocationPermissionState();
-  //   if (permissionState == LocationPermission.deniedForever) {
-  //     Navigator.pushNamed(context, DeniedLocationPermissionErrorScreen.id);
-  //   } else {
-  //     if (permissionState == LocationPermission.denied) {
-  //       permissionState = await requestLocationPermission();
-  //       if (permissionState == LocationPermission.denied ||
-  //           permissionState == LocationPermission.deniedForever) {
-  //         Navigator.pushNamed(context, DeniedLocationPermissionErrorScreen.id);
-  //       }
-  //     }
-  //   }
-  //   super.didUpdateWidget(oldWidget);
-  // }
-
   @override
   Widget build(BuildContext context) {
-    _context = context;
-
     if (_userLocation == null) {
       _updateUserLocation();
     }
@@ -251,16 +211,19 @@ class _ClinicPageState extends State<ClinicPage> {
   Widget _buildMapContent(BuildContext context) {
     return Stack(
       children: [
-        GoogleMap(
-          mapType: MapType.normal,
-          initialCameraPosition: kDefaultCameraPosition,
-          mapToolbarEnabled: false,
-          zoomControlsEnabled: false,
-          myLocationButtonEnabled: true,
-          markers:
-              _getApiNotifier(context).hospitalController.asMarkerSet(true),
-          onMapCreated: (GoogleMapController controller) {
-            _mapController.complete(controller);
+        Consumer<HospitalMarkerController>(
+          builder: (context, controller, child) {
+            return GoogleMap(
+              mapType: MapType.normal,
+              initialCameraPosition: kDefaultCameraPosition,
+              mapToolbarEnabled: false,
+              zoomControlsEnabled: false,
+              myLocationButtonEnabled: true,
+              markers: controller.asMarkerSet(true),
+              onMapCreated: (GoogleMapController controller) {
+                _mapController.complete(controller);
+              },
+            );
           },
         ),
         Positioned(
@@ -282,6 +245,7 @@ class _ClinicPageState extends State<ClinicPage> {
               ),
               // SizedBox(height: 8.0),
               // GradientButton(
+              //   heroTag: 'map_filter',
               //   onPressed: () {
               //     _getHospitalInfo();
               //   },
@@ -301,35 +265,39 @@ class _ClinicPageState extends State<ClinicPage> {
   }
 
   Widget _buildListContent(BuildContext context) {
-    var data = _getApiNotifier(context).hospitalController.asHospitalSet();
-
     return Stack(
       children: [
-        ListView(
-          padding: EdgeInsets.only(
-            top: 16.0,
-            bottom: 64.0,
-          ),
-          children: data.map((e) {
-            if (e is HospitalModel) {
-              var h = e as HospitalModel;
-              return InkWell(
-                onTap: () {
-                  _onLocationMarkerClick(h);
-                },
-                child: ListTile(
-                  title: Text(h.name),
-                  subtitle: Text('(${h.location.latitude.toStringAsFixed(2)},'
-                      '${h.location.longitude.toStringAsFixed(2)})'),
-                ),
-              );
-            }
-          }).toList(),
+        Consumer<HospitalMarkerController>(
+          builder: (context, controller, child) {
+            return ListView(
+              padding: EdgeInsets.only(
+                top: 16.0,
+                bottom: 64.0,
+              ),
+              children: controller.asHospitalSet().map((e) {
+                if (e is HospitalModel) {
+                  return InkWell(
+                    onTap: () {
+                      _onLocationMarkerClick(e);
+                    },
+                    child: ListTile(
+                      title: Text(e.name),
+                      subtitle: Text(
+                        '(${e.location.latitude.toStringAsFixed(2)},'
+                        '${e.location.longitude.toStringAsFixed(2)})',
+                      ),
+                    ),
+                  );
+                }
+              }).toList(),
+            );
+          },
         ),
         Positioned(
           right: 24.0,
           bottom: 48.0,
           child: GradientButton(
+            heroTag: 'map_filter',
             onPressed: () {
               _getHospitalInfo();
             },

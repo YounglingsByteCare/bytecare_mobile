@@ -42,4 +42,19 @@ class HospitalModel {
       onDragEnd: onDragEnd,
     );
   }
+
+  Map<String, dynamic> asMap([bool includeId = false]) {
+    if (includeId) {
+      return {
+        'id': id,
+        'hospital_name': name,
+        'point': [location.latitude, location.longitude],
+      };
+    } else {
+      return {
+        'hospital_name': name,
+        'point': [location.latitude, location.longitude],
+      };
+    }
+  }
 }

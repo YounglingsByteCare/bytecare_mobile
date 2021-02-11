@@ -78,6 +78,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.0"
+  enum_to_string:
+    dependency: "direct main"
+    description:
+      name: enum_to_string
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.14"
   fake_async:
     dependency: transitive
     description:
@@ -111,6 +118,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.1.2"
+  flutter_email_sender:
+    dependency: "direct main"
+    description:
+      name: flutter_email_sender
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "4.0.0"
   flutter_plugin_android_lifecycle:
     dependency: transitive
     description:
@@ -212,6 +226,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.16.1"
+  intl_phone_field:
+    dependency: "direct main"
+    description:
+      name: intl_phone_field
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.4.2"
   line_awesome_flutter:
     dependency: "direct main"
     description:

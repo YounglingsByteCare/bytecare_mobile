@@ -3,23 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 /* Project-level Imports */
 // Theme
 import '../theme/colors.dart';
 import '../theme/text.dart';
 
-// Models
-import '../models/appointment.dart';
-import '../models/hospital.dart';
-import '../models/patient.dart';
-
 // Controllers
+import '../controllers/account.dart';
 import '../controllers/hospital_marker.dart';
-
-// Providers
-import '../providers/byte_care_api_notifier.dart';
 
 // Services
 import '../services/auth_storage.dart';
@@ -27,15 +19,22 @@ import '../services/byte_care_api.dart';
 
 // Screens
 import 'application_screen.dart';
-import 'book_appointment_screen.dart';
 import 'landing_screen.dart';
 import 'login_screen.dart';
-import 'pages/clinic_page.dart';
+import 'errors/no_server.dart';
+import 'errors/unknown_error.dart';
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   static const id = 'splash_screen';
 
+  @override
+  _SplashScreenState createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
   BuildContext _context;
+
+  String _loadingText = '';
 
   @override
   Widget build(BuildContext context) {
@@ -65,88 +64,70 @@ class SplashScreen extends StatelessWidget {
             ],
           ),
         ),
-        SizedBox(height: 24.0),
+        SizedBox(height: 32.0),
         SpinKitWave(color: kThemeColorPrimary),
+        SizedBox(height: 24.0),
+        Text(this._loadingText, style: kBody1TextStyle),
       ],
     );
   }
 
-  ByteCareApiNotifier _getApiNotifier(BuildContext context,
-          [bool listen = false]) =>
-      Provider.of<ByteCareApiNotifier>(context, listen: listen);
+  T _getProvider<T>(BuildContext context, [bool listen = false]) =>
+      Provider.of<T>(context, listen: listen);
 
   Future<Widget> _splashInit() async {
-    var store = AuthStorage.getInstance();
-    var prefs = await SharedPreferences.getInstance();
-    var api = ByteCareApi.getInstance();
+    try {
+      var store = AuthStorage.getInstance();
+      var prefs = await SharedPreferences.getInstance();
+      Widget result;
 
-    _getApiNotifier(_context).setHospitalController(
-      HospitalMarkerController.withUser(
-        userMarker: Marker(
-          markerId: MarkerId(''),
-          infoWindow: InfoWindow(
-            title: 'You',
-            snippet: 'Your Location',
-          ),
-        ),
-      ),
-    );
+      var api = ByteCareApi.getInstance();
+      if (!await api.testConnection()) return NoServer(widget);
 
-    if (await store.hasLoginToken) {
-      prefs.setBool('is_first_run', true);
-      store.retrieveLoginToken().then((value) async {
-        _getApiNotifier(this._context).authToken = value;
-
-        List<dynamic> apiHospitals = (await api.getHospitals(value)).data;
-        var hospitals = apiHospitals.map((e) {
-          return HospitalModel(
-            id: e['_id']['\$oid'],
-            name: e['hospital_name'],
-            location: LatLng(e['point'][0], e['point'][1]),
-          );
+      try {
+        setState(() {
+          _loadingText = 'Loading Hospital Data';
         });
+        await _getProvider<HospitalMarkerController>(this._context)
+            .loadHospitals();
+      } on ServerNotAvailableException {
+        result = NoServer(widget);
+      }
 
-        _getApiNotifier(this._context)
-            .hospitalController
-            .addHospitals(hospitals);
+      if (await store.hasLoginToken) {
+        prefs.setBool('is_first_run', true);
+        var token = await store.retrieveLoginToken();
 
-        List<dynamic> apiPatients = (await api.getPatients(value)).data;
+        _getProvider<AccountController>(this._context).token = token;
 
-        print('Patients: $apiPatients');
+        try {
+          setState(() {
+            _loadingText = 'Loading User Data';
+          });
+          await _getProvider<AccountController>(this._context).loadUser(
+            _getProvider<HospitalMarkerController>(this._context).hospitals,
+          );
+        } on ServerNotAvailableException {}
 
-        _getApiNotifier(this._context)
-            .initPatients(apiPatients.map<PatientModel>(
-          (e) {
-            return PatientModel.parse(e);
-          },
-        ));
-
-        List<dynamic> apiAppointments = (await api.getAppointments(value)).data;
-        _getApiNotifier(this._context)
-            .initAppointments(apiAppointments.map<AppointmentModel>(
-          (e) {
-            return AppointmentModel.parse(e);
-          },
-        ));
-        // api.getHospitals(token);
-        // api.getPatients(token);
-        // api.getAppointments(token);
-      });
-
-      return ApplicationScreen();
-    } else {
-      if (prefs.containsKey('is_first_run')) {
-        var value = !prefs.getBool('is_first_run');
-        if (value) {
-          return LoginScreen();
+        result = ApplicationScreen();
+      } else {
+        if (prefs.containsKey('is_first_run')) {
+          var value = !prefs.getBool('is_first_run');
+          if (value) {
+            result = LoginScreen();
+          } else {
+            prefs.setBool('is_first_run', true);
+            result = LandingScreen();
+          }
         } else {
           prefs.setBool('is_first_run', true);
-          return LandingScreen();
+          result = LandingScreen();
         }
-      } else {
-        prefs.setBool('is_first_run', true);
-        return LandingScreen();
       }
+
+      return result;
+    } catch (e) {
+      return UnknownError(e);
     }
   }
 }

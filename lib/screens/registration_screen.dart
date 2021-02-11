@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:form_field_validator/form_field_validator.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 
 /* Project-level Imports */
 // Constants
@@ -11,19 +12,26 @@ import '../theme/text.dart';
 import '../theme/colors.dart';
 import '../theme/gradients.dart';
 import '../theme/form.dart';
+
 // Utils
 import '../utils/color.dart';
+
 // Data Models
 import '../models/gradient_color.dart';
 import '../models/processing_dialog_theme.dart';
+
 // Controllers
+import '../controllers/account.dart';
 import '../controllers/processing_view.dart';
+
 // Services
-import '../services/byte_care_api.dart';
+import '../services/auth_storage.dart';
+
 // Widgets
 import '../widgets/gradient_background.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/processing_dialog.dart';
+
 // Screens
 import 'application_screen.dart';
 import 'login_screen.dart';
@@ -47,32 +55,35 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   TextEditingController _passwordController = TextEditingController();
 
   void showTermsOfServiceDialog() {}
+
   void showPrivacyPolicyDialog() {}
 
   @override
   void initState() {
     super.initState();
     _processState = ProcessingViewController(
-      modalBuilder: (data, content, message) => Stack(
-        children: [
-          content,
-          Positioned.fill(
-            child: Material(
-              color: Colors.black45,
-              child: Align(
-                alignment: Alignment.center,
-                child: ProcessingDialog(
-                  color: data.color,
-                  icon: data.icon,
-                  message: message,
-                  showWave: data.waveColor != null,
-                  waveColor: data.waveColor,
+      modalBuilder: (data, content, message) {
+        return Stack(
+          children: [
+            content,
+            Positioned.fill(
+              child: Material(
+                color: Colors.black45,
+                child: Align(
+                  alignment: Alignment.center,
+                  child: ProcessingDialog(
+                    color: data.color,
+                    icon: data.icon,
+                    message: message,
+                    showWave: data.waveColor != null,
+                    waveColor: data.waveColor,
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      },
       successData: ProcessingDialogThemeModel(
         color: kThemeColorSuccess,
         icon: CircleAvatar(
@@ -307,6 +318,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     );
   }
 
+  T _getProvider<T>(BuildContext context, [bool listen = false]) =>
+      Provider.of<T>(context, listen: listen);
+
   void _registerUser() async {
     // Check if form data is valid.
     var valid = _formKey.currentState.validate();
@@ -319,10 +333,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       _processState.begin();
     });
 
-    var api = ByteCareApi.getInstance();
-
-    // Send 'signup' api call.
-    var registerResult = await api.signup(
+    var registerResult =
+        await _getProvider<AccountController>(this.context).register(
       _emailController.text,
       _passwordController.text,
     );
@@ -351,12 +363,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       return;
     }
 
-    var loginResult = await api.login(
+    var loginResult = await _getProvider<AccountController>(context).login(
       _emailController.text,
       _passwordController.text,
     );
 
     if (loginResult.code == 200) {
+      var token = loginResult.data['token'];
+      AuthStorage.getInstance().storeLoginToken(token);
+
       await Future.delayed(kProcessDelayDuration);
 
       Navigator.pushNamedAndRemoveUntil(

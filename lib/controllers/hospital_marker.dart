@@ -4,13 +4,17 @@ import 'package:uuid/uuid.dart';
 
 /* Project-level Imports */
 // Data Models
+import '../models/api_result.dart';
 import '../models/hospital.dart';
 
-class HospitalMarkerController {
+// Services
+import '../services/byte_care_api.dart';
+
+class HospitalMarkerController extends ChangeNotifier {
   final Uuid uuid = Uuid();
   final BitmapDescriptor markerIcon;
 
-  Map<MarkerId, HospitalModel> _hospitals;
+  Map<String, HospitalModel> _hospitals;
   void Function(HospitalModel) onTap;
   Marker _userMarker;
 
@@ -26,7 +30,12 @@ class HospitalMarkerController {
   })  : _hospitals = {},
         _userMarker = userMarker;
 
-  void clearHospitals() => _hospitals.clear();
+  Map<String, HospitalModel> get hospitals => _hospitals;
+
+  void clearHospitals() {
+    _hospitals.clear();
+    notifyListeners();
+  }
 
   set userLocation(LatLng location) => updateUserMarker(position: location);
 
@@ -60,9 +69,42 @@ class HospitalMarkerController {
       onTapParam: onTap ?? _userMarker.onTap,
       onDragEndParam: onDragEnd ?? _userMarker.onDragEnd,
     );
+
+    notifyListeners();
   }
 
-  HospitalModel getHospital(MarkerId id) {
+  Future<ApiResultModel> loadHospitals() async {
+    var api = ByteCareApi.getInstance();
+    var result;
+
+    try {
+      result = await api.getHospitals();
+    } on ServerNotAvailableException {
+      throw ServerNotAvailableException();
+    }
+
+    if (result.code != 200) {
+      return result;
+    }
+
+    List<dynamic> data = result.data;
+    Map<String, HospitalModel> updated = {};
+
+    data.forEach((e) {
+      var id = e['_id']['\$oid'];
+      updated[id] = HospitalModel(
+        id: id,
+        name: e['hospital_name'],
+        location: LatLng(e['point'][0], e['point'][1]),
+      );
+    });
+
+    _hospitals = updated;
+    notifyListeners();
+    return result.copyWith(data: updated);
+  }
+
+  HospitalModel getHospital(String id) {
     if (!_hospitals.containsKey(id)) {
       return _hospitals[id];
     }
@@ -71,29 +113,32 @@ class HospitalMarkerController {
 
   void addHospitals(Iterable<HospitalModel> m) {
     for (var hospital in m) {
-      var id = MarkerId(hospital.id);
-      if (!_hospitals.containsKey(id)) {
-        _hospitals[id] = hospital;
+      if (!_hospitals.containsKey(hospital.id)) {
+        _hospitals[hospital.id] = hospital;
       }
     }
+
+    notifyListeners();
   }
 
   void addHospital(HospitalModel m) {
-    var id = MarkerId(m.id);
-    if (!_hospitals.containsKey(id)) {
-      _hospitals[id] = m;
+    if (!_hospitals.containsKey(m.id)) {
+      _hospitals[m.id] = m;
+
+      notifyListeners();
     }
   }
 
   void upsertHospital(HospitalModel m) {
-    var id = MarkerId(m.id);
-    _hospitals[id] = m;
+    _hospitals[m.id] = m;
+    notifyListeners();
   }
 
   void updateHospital(HospitalModel m) {
-    var id = MarkerId(m.id);
-    if (!_hospitals.containsKey(id)) {
-      _hospitals[id] = m;
+    if (!_hospitals.containsKey(m.id)) {
+      _hospitals[m.id] = m;
+
+      notifyListeners();
     }
   }
 

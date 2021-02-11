@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:ms_undraw/ms_undraw.dart';
+import 'package:intl/intl.dart';
 
 /* Project-level Imports */
 // Theme
@@ -18,28 +21,36 @@ import '../../models/gradient_color.dart';
 import '../../models/processing_dialog_theme.dart';
 
 // Controllers
+import '../../controllers/account.dart';
 import '../../controllers/processing_view.dart';
 
 // Interfaces
 import '../../interfaces/application_page.dart';
 
-// Providers
-import '../../providers/byte_care_api_notifier.dart';
-
-// Services
-import '../../services/byte_care_api.dart';
-
 // Widgets
 import '../../widgets/gradient_background.dart';
+import '../../widgets/gradient_button.dart';
 import '../../widgets/processing_dialog.dart';
+
+// Screens
+import './clinic_page.dart';
 
 class TicketPage extends StatefulWidget implements ApplicationPage {
   final IconData _fabIcon;
-  final void Function() _fabPressed;
+  final void Function(ApplicationPage) _fabPressed;
+  final void Function(Type) _pageUpdater;
+  ProcessingViewController processState;
+  String appointmentId;
 
-  TicketPage({IconData fabIcon, void Function() fabPressed})
-      : _fabIcon = fabIcon,
-        _fabPressed = fabPressed;
+  PatientModel _selectedPatient;
+
+  TicketPage({
+    IconData fabIcon,
+    void Function(ApplicationPage) fabPressed,
+    void Function(Type) pageUpdater,
+  })  : _fabIcon = fabIcon,
+        _fabPressed = fabPressed,
+        _pageUpdater = pageUpdater;
 
   @override
   _TicketPageState createState() => _TicketPageState();
@@ -51,22 +62,23 @@ class TicketPage extends StatefulWidget implements ApplicationPage {
   IconData getFabIcon() => _fabIcon;
 
   @override
-  void Function() getFabPressed() => _fabPressed;
+  void Function() getFabPressed() => () => _fabPressed(this);
 
   @override
   get usesFab => _fabIcon != null && _fabPressed != null;
+
+  PatientModel get selectedPatient => _selectedPatient;
 }
 
 class _TicketPageState extends State<TicketPage> {
-  ProcessingViewController _processState;
-  PatientModel _selectedPatient;
+  final DateFormat _dateFormat = DateFormat.Md().add_jm();
 
-  ByteCareApiNotifier _getApiNotifier(BuildContext context, [bool listen]) =>
-      Provider.of(context, listen: listen);
+  T _getProvider<T>(BuildContext context, [bool listen = false]) =>
+      Provider.of<T>(context, listen: listen);
 
   @override
   void initState() {
-    _processState = ProcessingViewController(
+    widget.processState = ProcessingViewController(
       modalBuilder: (data, content, message) => Stack(
         children: [
           content,
@@ -111,21 +123,129 @@ class _TicketPageState extends State<TicketPage> {
         ),
       ),
     );
+    widget.processState.addListener(() {
+      setState(() {});
+    });
 
     super.initState();
+
+    if (_getProvider<AccountController>(this.context).hasAppointments() &&
+        _getProvider<AccountController>(this.context).bookedPatients.isNotEmpty)
+      widget._selectedPatient =
+          _getProvider<AccountController>(this.context).bookedPatients.first;
   }
 
   @override
   Widget build(BuildContext context) {
-    return GradientBackground(
-      theme: kByteCareThemeData,
-      background: GradientColorModel(kThemeGradientPrimaryAngled),
-      ignoreSafeArea: false,
-      child: _processState.build(_buildContent()),
+    if (_getProvider<AccountController>(this.context).hasAppointments()) {
+      if (widget._selectedPatient == null) {
+        return GradientBackground(
+          theme: kByteCareThemeData,
+          background: GradientColorModel(kThemeGradientPrimaryAngled),
+          ignoreSafeArea: false,
+          child: widget.processState.build(_buildNoPatientSelectedContent()),
+        );
+      } else {
+        return GradientBackground(
+          theme: kByteCareThemeData,
+          background: GradientColorModel(kThemeGradientPrimaryAngled),
+          ignoreSafeArea: false,
+          child: widget.processState.build(_buildTicketContent()),
+        );
+      }
+    } else {
+      return GradientBackground(
+        theme: kByteCareThemeData,
+        background: GradientColorModel(Colors.white),
+        ignoreSafeArea: false,
+        child: widget.processState.build(_buildEmptyContent()),
+      );
+    }
+  }
+
+  Widget _buildEmptyContent() {
+    return Padding(
+      padding: const EdgeInsets.only(
+        top: 24.0,
+        left: 24.0,
+        right: 24.0,
+        bottom: 48.0,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          AspectRatio(
+            aspectRatio: 10 / 9,
+            child: UnDraw(
+              illustration: UnDrawIllustration.empty,
+              color: kThemeColorPrimary,
+            ),
+          ),
+          Text(
+            'You haven\'t made any appointments, yet.',
+            textAlign: TextAlign.center,
+            style: kTitle2TextStyle,
+          ),
+          SizedBox(height: 32.0),
+          IntrinsicWidth(
+            child: GradientButton(
+              onPressed: () {
+                if (widget._pageUpdater != null)
+                  widget._pageUpdater(ClinicPage);
+              },
+              borderRadius: BorderRadius.circular(8.0),
+              background: GradientColorModel(kButtonBackgroundLinearGradient),
+              padding: EdgeInsets.symmetric(
+                vertical: 16.0,
+                horizontal: 24.0,
+              ),
+              child: Text(
+                'Book one now',
+                style: kButtonBody1TextStyle,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildNoPatientSelectedContent() {
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: 16.0,
+            horizontal: 16.0,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              UnDraw(
+                illustration: UnDrawIllustration.no_data,
+                color: kThemeColorPrimary,
+              ),
+              SizedBox(height: 32.0),
+              Text(
+                'You haven\'t selected a patient.',
+                textAlign: TextAlign.center,
+                style: kTitle2TextStyle,
+              ),
+              SizedBox(height: 8.0),
+              Text(
+                'Please select a patient so that we can load an appointment.',
+                textAlign: TextAlign.center,
+                style: kBody1TextStyle,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTicketContent() {
     return Column(
       children: [
         Padding(
@@ -142,27 +262,40 @@ class _TicketPageState extends State<TicketPage> {
                   color: Colors.white.withOpacity(.9),
                 ),
               ),
-              DropdownButtonFormField<PatientModel>(
-                value: _selectedPatient,
-                onChanged: (patient) {
-                  if (patient != _selectedPatient) {
-                    _selectedPatient = patient;
-                  }
-                },
-                items: _getApiNotifier(context, true).patients.map((e) {
-                  return DropdownMenuItem<PatientModel>(
-                    child: Text(
-                      '${e.name} ${e.surname}',
-                      style: kButtonBody1TextStyle,
+              SizedBox(height: 16.0),
+              Consumer<AccountController>(
+                builder: (context, controller, child) {
+                  return DropdownButtonFormField<PatientModel>(
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(LineAwesomeIcons.user_tie),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide.none,
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
                     ),
+                    value: widget._selectedPatient,
+                    onChanged: (patient) {
+                      print('Patient Changed');
+                      if (patient != widget._selectedPatient) {
+                        print('Gonna update state');
+                        setState(() {
+                          widget._selectedPatient = patient;
+                        });
+                      }
+                    },
+                    items: controller.bookedPatients.map((e) {
+                      return DropdownMenuItem<PatientModel>(
+                        value: e,
+                        child: Text(
+                          '${e.name} ${e.surname}',
+                          style: kButtonBody1TextStyle,
+                        ),
+                      );
+                    }).toList(),
                   );
-                }).toList(),
-              ),
-              Text(
-                _selectedPatient.name,
-                style: kTitle1TextStyle.copyWith(
-                  color: Colors.white,
-                ),
+                },
               ),
             ],
           ),
@@ -182,12 +315,20 @@ class _TicketPageState extends State<TicketPage> {
                 ),
               ],
             ),
-            child: _buildTicketData(
-              'Groote Schuur Hospital',
-              '2020-01-29 '
-                  '12:18:36',
-              'Not yet completed',
-              'Stomach Bug',
+            child: Consumer<AccountController>(
+              builder: (context, controller, child) {
+                var appointment = controller
+                    .getAppointmentForPatient(widget._selectedPatient);
+
+                widget.appointmentId = appointment.id;
+
+                return _buildTicketData(
+                  hospitalName: appointment.hospitalSelected.name,
+                  datetime: _dateFormat.format(appointment.date),
+                  completionStatus: 'Incomplete',
+                  reason: appointment.reason,
+                );
+              },
             ),
           ),
         ),
@@ -195,60 +336,105 @@ class _TicketPageState extends State<TicketPage> {
     );
   }
 
-  Column _buildTicketData(String hospitalName, String datetime,
-      String completionStatus, String reason) {
+  _buildTicketData({
+    String hospitalName,
+    String datetime,
+    String completionStatus,
+    String reason,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Text(
-              hospitalName,
-              style: kBody1TextStyle,
-            ),
-          ],
-        ),
-        SizedBox(height: 16.0),
-        Text(
-          datetime,
+        TextField(
+          controller: TextEditingController(text: hospitalName),
+          readOnly: true,
           style: kBody1TextStyle,
-        ),
-        SizedBox(height: 16.0),
-        Text(
-          completionStatus,
-          style: kBody1TextStyle,
-        ),
-        SizedBox(height: 16.0),
-        Expanded(
-          child: Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(24.0),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(24.0),
+          decoration: InputDecoration(
+            prefixIcon: Icon(LineAwesomeIcons.medical_clinic),
+            suffixIcon: IconButton(
+              onPressed: () async {
+                _saveToClipboard(hospitalName);
+              },
+              icon: Icon(LineAwesomeIcons.clipboard),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Reason for Visit',
-                  textAlign: TextAlign.start,
-                  style: kSubtitle1TextStyle,
-                ),
-                SizedBox(height: 8.0),
-                RichText(
-                  text: TextSpan(
-                    text: reason,
-                    style: kBody1TextStyle,
-                  ),
-                  textAlign: TextAlign.start,
-                ),
-              ],
+            labelText: 'Hospital',
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+          ),
+        ),
+        SizedBox(height: 8.0),
+        TextField(
+          controller: TextEditingController(text: datetime),
+          readOnly: true,
+          style: kBody1TextStyle,
+          decoration: InputDecoration(
+            prefixIcon: Icon(LineAwesomeIcons.clock),
+            suffixIcon: IconButton(
+              onPressed: () async {
+                _saveToClipboard(datetime);
+              },
+              icon: Icon(LineAwesomeIcons.clipboard),
+            ),
+            labelText: 'Date and Time',
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+          ),
+        ),
+        SizedBox(height: 16.0),
+        TextField(
+          controller: TextEditingController(text: completionStatus),
+          readOnly: true,
+          style: kBody1TextStyle,
+          decoration: InputDecoration(
+            prefixIcon: Icon(LineAwesomeIcons.spinner),
+            suffixIcon: IconButton(
+              onPressed: () async {
+                _saveToClipboard(completionStatus);
+              },
+              icon: Icon(LineAwesomeIcons.clipboard),
+            ),
+            labelText: 'Completion Status',
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+          ),
+        ),
+        SizedBox(height: 16.0),
+        TextField(
+          controller: TextEditingController(text: reason),
+          readOnly: true,
+          maxLines: 8,
+          textAlignVertical: TextAlignVertical.top,
+          style: kBody1TextStyle,
+          decoration: InputDecoration(
+            // prefixIcon: Icon(LineAwesomeIcons.spinner),
+            suffixIcon: IconButton(
+              onPressed: () async {
+                _saveToClipboard(reason);
+              },
+              icon: Icon(LineAwesomeIcons.clipboard),
+            ),
+            labelText: 'Reason for Visit',
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey.shade200),
             ),
           ),
         ),
         SizedBox(height: 80.0),
       ],
+    );
+  }
+
+  void _saveToClipboard(String text) async {
+    var data = ClipboardData(text: text);
+    await Clipboard.setData(data);
+
+    Scaffold.of(this.context).showSnackBar(
+      SnackBar(
+        content: Text('Successfully copied to clipboard.'),
+      ),
     );
   }
 }
