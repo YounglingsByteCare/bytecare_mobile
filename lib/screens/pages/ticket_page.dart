@@ -278,9 +278,7 @@ class _TicketPageState extends State<TicketPage> {
                     ),
                     value: widget._selectedPatient,
                     onChanged: (patient) {
-                      print('Patient Changed');
                       if (patient != widget._selectedPatient) {
-                        print('Gonna update state');
                         setState(() {
                           widget._selectedPatient = patient;
                         });
@@ -345,8 +343,7 @@ class _TicketPageState extends State<TicketPage> {
     String completionStatus,
     String reason,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView(
       children: [
         TextField(
           controller: TextEditingController(text: hospitalName),
