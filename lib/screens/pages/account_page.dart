@@ -9,13 +9,17 @@ import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import '../../theme/text.dart';
 import '../../theme/form.dart';
 
+// Utils
+import '../../utils/color.dart';
 
 // Interfaces
 import '../../interfaces/application_page.dart';
 
-
 // Controllers
 import '../../controllers/account.dart';
+
+// Screens
+import '../../screens/verify_email_screen.dart';
 
 class AccountPage extends StatefulWidget implements ApplicationPage {
   final IconData _fabIcon;
@@ -60,6 +64,35 @@ class _AccountPageState extends State<AccountPage> {
           decoration: kFormFieldInputDecoration,
           child: Text(_getProvider<AccountController>(context).email),
         ),
+        SizedBox(height: 8.0),
+        ListTile(
+          tileColor: kThemeColorWarning.withAlpha(0x16),
+          shape: RoundedRectangleBorder(
+            side: BorderSide(color: kThemeColorWarning),
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          title: Text(
+            'Your email isn\'t verified',
+            style: kBody1TextStyle.copyWith(
+              color: darken(kThemeColorWarning, 35),
+            ),
+          ),
+          trailing: IntrinsicWidth(
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, VerifyEmailScreen.id);
+              },
+              style: ElevatedButton.styleFrom(
+                primary: kThemeColorWarning,
+                shadowColor: kThemeColorWarning,
+              ),
+              child: Text(
+                'Verify Now',
+                style: kButtonBody2TextStyle.copyWith(color: Colors.black),
+              ),
+            ),
+          ),
+        ),
         SizedBox(height: kFormFieldSpacing),
         Row(
           children: [
@@ -93,7 +126,23 @@ class _AccountPageState extends State<AccountPage> {
                       subtitle: Text(e.idNumber),
                       trailing: IconButton(
                         onPressed: () {
-                          setState(() {});
+                          WidgetsBinding.instance
+                              .addPostFrameCallback((timeStamp) async {
+                            bool confirmation = await showDialog<bool>(
+                              context: this.context,
+                              barrierColor: Colors.black12,
+                              barrierDismissible: false,
+                              builder: (context) =>
+                                  _buildPatientDeleteConfirmationDialog(),
+                            );
+
+                            if (confirmation) {
+                              _getProvider<AccountController>(this.context)
+                                  .deletePatient(e.idNumber);
+
+                              setState(() {});
+                            }
+                          });
                         },
                         icon: Icon(
                           LineAwesomeIcons.trash,
@@ -111,6 +160,45 @@ class _AccountPageState extends State<AccountPage> {
                 ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPatientDeleteConfirmationDialog() {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              'Confirm Patient Delete',
+              style: kTitle2TextStyle,
+            ),
+            SizedBox(height: 8.0),
+            Text(
+              'Are you sure you want to delete the selected patient?',
+              style: kBody1TextStyle,
+            ),
+            SizedBox(height: 16.0),
+            ButtonBar(
+              layoutBehavior: ButtonBarLayoutBehavior.constrained,
+              children: [
+                FlatButton(
+                  onPressed: () {},
+                  child: Text('No'),
+                ),
+                FlatButton(
+                  onPressed: () {},
+                  child: Text('Yes'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
