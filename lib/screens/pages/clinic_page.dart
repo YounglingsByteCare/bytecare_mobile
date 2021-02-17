@@ -221,7 +221,8 @@ class _ClinicPageState extends State<ClinicPage> {
               myLocationButtonEnabled: true,
               markers: controller.asMarkerSet(true),
               onMapCreated: (GoogleMapController controller) {
-                _mapController.complete(controller);
+                if (!_mapController.isCompleted)
+                  _mapController.complete(controller);
               },
             );
           },
