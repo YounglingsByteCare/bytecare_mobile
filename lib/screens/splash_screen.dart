@@ -21,6 +21,7 @@ import '../services/byte_care_api.dart';
 import 'application_screen.dart';
 import 'landing_screen.dart';
 import 'login_screen.dart';
+import 'errors/connection_failed.dart';
 import 'errors/no_server.dart';
 import 'errors/unknown_error.dart';
 
@@ -104,9 +105,14 @@ class _SplashScreenState extends State<SplashScreen> {
           setState(() {
             _loadingText = 'Loading User Data';
           });
-          await _getProvider<AccountController>(this._context).loadUser(
+          var res =
+              await _getProvider<AccountController>(this._context).loadUser(
             _getProvider<HospitalMarkerController>(this._context).hospitals,
           );
+
+          if (res.code != 200) {
+            result = ConnectionFailed(widget);
+          }
         } on ServerNotAvailableException {}
 
         result = ApplicationScreen();
