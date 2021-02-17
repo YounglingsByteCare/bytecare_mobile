@@ -21,7 +21,7 @@ import 'screens/login_screen.dart';
 import 'screens/registration_screen.dart';
 import 'screens/splash_screen.dart';
 
-final Uri apiHostUri = Uri(scheme: 'http', host: '10.0.0.108', port: 5000);
+final Uri apiHostUri = Uri(scheme: 'https', host: 'byteme-test.herokuapp.com');
 
 void main() {
   runApp(ByteCareMobile());
@@ -50,14 +50,14 @@ class ByteCareMobile extends StatelessWidget {
       child: MaterialApp(
         initialRoute: SplashScreen.id,
         routes: {
-          SplashScreen.id: (context) => SplashScreen(),
-          LandingScreen.id: (context) => LandingScreen(),
-          RegistrationScreen.id: (context) => RegistrationScreen(),
-          LoginScreen.id: (context) => LoginScreen(),
-          ForgotPasswordScreen.id: (context) => ForgotPasswordScreen(),
           ApplicationScreen.id: (context) => ApplicationScreen(),
           BookAppointmentScreen.id: (context) => BookAppointmentScreen(),
           CreatePatientScreen.id: (context) => CreatePatientScreen(),
+          ForgotPasswordScreen.id: (context) => ForgotPasswordScreen(),
+          LandingScreen.id: (context) => LandingScreen(),
+          LoginScreen.id: (context) => LoginScreen(),
+          RegistrationScreen.id: (context) => RegistrationScreen(),
+          SplashScreen.id: (context) => SplashScreen(),
         },
       ),
     );
