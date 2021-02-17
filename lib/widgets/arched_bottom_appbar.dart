@@ -45,16 +45,17 @@ Path buildCurvePath(
 
 class BottomAppbarItem {
   final void Function(BuildContext, Widget, int) onPressed;
-  final ApplicationPage page;
+  final ApplicationPage Function() pageBuilder;
   final IconData icon;
   final String label;
   final bool isMini;
+  ApplicationPage _page;
   bool _isActive;
 
   BottomAppbarItem({
     @required this.onPressed,
     @required this.icon,
-    this.page,
+    this.pageBuilder,
     this.label,
     this.isMini = false,
     bool active = false,
@@ -63,6 +64,14 @@ class BottomAppbarItem {
   get isActive => _isActive;
 
   set isActive(val) => _isActive = val;
+
+  ApplicationPage get page {
+    if (_page == null) {
+      _page = pageBuilder();
+    }
+
+    return _page;
+  }
 }
 
 class ArchedBottomAppbar extends StatelessWidget {
