@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 /* Project-level Imports */
 // Theme
 import '../theme/themes.dart';
+import '../theme/text.dart';
 import '../theme/colors.dart';
 import '../theme/gradients.dart';
 
@@ -62,7 +63,7 @@ class _ApplicationScreenState extends State<ApplicationScreen>
 
     pages = [
       BottomAppbarItem(
-        page: ClinicPage(
+        pageBuilder: () => ClinicPage(
           viewController: _mapViewController,
           fabIcon: _mapViewController.currentIcon,
           fabPressed: () {
@@ -80,10 +81,20 @@ class _ApplicationScreenState extends State<ApplicationScreen>
         label: 'Home',
       ),
       BottomAppbarItem(
-        page: TicketPage(
+        pageBuilder: () => TicketPage(
           pageUpdater: _setPageOfType,
           fabIcon: LineAwesomeIcons.times,
           fabPressed: (caller) async {
+            bool confirmation = await showDialog<bool>(
+              context: this.context,
+              barrierColor: Colors.black12,
+              barrierDismissible: false,
+              builder: (context) =>
+                  _buildAppointmentCancelConfirmationDialog(context),
+            );
+
+            if (!confirmation) return;
+
             var c = caller as TicketPage;
 
             if (c.selectedPatient == null) {
@@ -130,7 +141,7 @@ class _ApplicationScreenState extends State<ApplicationScreen>
         label: 'Bookings',
       ),
       BottomAppbarItem(
-        page: AccountPage(
+        pageBuilder: () => AccountPage(
           fabIcon: LineAwesomeIcons.alternate_sign_out,
           fabPressed: () {
             _getProvider<AccountController>(this.context).logout();
@@ -179,11 +190,56 @@ class _ApplicationScreenState extends State<ApplicationScreen>
       theme: kByteCareThemeData,
       background: GradientColorModel(kThemeGradientPrimaryAngled),
       ignoreSafeArea: false,
-      child: _build(),
+      child: _buildContent(),
     );
   }
 
-  Widget _build() {
+  Widget _buildAppointmentCancelConfirmationDialog(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              'Confirm Appointment Cancel',
+              style: kSubtitle2TextStyle.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 8.0),
+            Text(
+              'Are you sure you want to cancel the selected appointment?',
+              style: kBody1TextStyle,
+            ),
+            SizedBox(height: 16.0),
+            ButtonBar(
+              layoutBehavior: ButtonBarLayoutBehavior.constrained,
+              children: [
+                FlatButton(
+                  onPressed: () {
+                    Navigator.pop(context, false);
+                  },
+                  child: Text('No'),
+                ),
+                FlatButton(
+                  onPressed: () {
+                    Navigator.pop(context, true);
+                  },
+                  child: Text('Yes'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
     var page = _getCurrentAppbarPage();
 
     return Scaffold(
