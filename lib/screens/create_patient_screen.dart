@@ -50,6 +50,15 @@ enum Gender {
 class CreatePatientScreen extends StatefulWidget {
   static String id = 'create_patient_screen';
 
+  final Widget returnPage;
+  final String returnPageId;
+
+  CreatePatientScreen({
+    this.returnPage,
+    this.returnPageId,
+  }) : assert((returnPage != null) &&
+            (returnPageId != null && returnPageId.isEmpty));
+
   @override
   _CreatePatientScreenState createState() => _CreatePatientScreenState();
 }
@@ -91,6 +100,9 @@ class _CreatePatientScreenState extends State<CreatePatientScreen> {
             ),
           ],
         );
+      },
+      onWillPopScope: (result) {
+        return false;
       },
       successData: ProcessingDialogThemeModel(
         color: kThemeColorSuccess,
@@ -135,23 +147,27 @@ class _CreatePatientScreenState extends State<CreatePatientScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GradientBackground(
-      theme: kByteCareThemeData,
-      background: GradientColorModel(kThemeGradientPrimaryAngled),
-      ignoreSafeArea: true,
-      child: _processState.build(_buildContent()),
+    return _processState.build(
+      GradientBackground(
+        theme: kByteCareThemeData,
+        background: GradientColorModel(kThemeGradientPrimaryAngled),
+        ignoreSafeArea: true,
+        child: _buildContent(context),
+      ),
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        leading: BackButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+        leading: Navigator.canPop(context)
+            ? BackButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              )
+            : Container(),
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(80.0),
           child: Padding(
@@ -437,7 +453,16 @@ class _CreatePatientScreenState extends State<CreatePatientScreen> {
 
       _processState.reset();
 
-      Navigator.pop(this.context);
+      if (widget.returnPage != null) {
+        Navigator.push(
+          this.context,
+          MaterialPageRoute(builder: (context) => widget.returnPage),
+        );
+      } else if (widget.returnPageId != null) {
+        Navigator.pushNamed(this.context, widget.returnPageId);
+      } else {
+        Navigator.pop(this.context);
+      }
     } else {
       _processState.completeWithError(
         result.code,
