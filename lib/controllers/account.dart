@@ -15,6 +15,7 @@ import '../services/byte_care_api.dart';
 class AccountController extends ChangeNotifier {
   String _authToken;
   String email;
+  bool verified;
   Map<String, PatientModel> _patients;
   Map<String, AppointmentModel> _appointments;
 
@@ -103,9 +104,24 @@ class AccountController extends ChangeNotifier {
       throw ServerNotAvailableException();
     }
 
-    this.token = result.data['token'];
+    if (result.code == 200) {
+      this.token = result.data['token'];
+    }
 
     notifyListeners();
+    return result;
+  }
+
+  Future<ApiResultModel> verify() async {
+    var api = ByteCareApi.getInstance();
+    var result;
+
+    try {
+      result = await api.verifyUser(token);
+    } on ServerNotAvailableException {
+      throw ServerNotAvailableException();
+    }
+
     return result;
   }
 
@@ -168,7 +184,6 @@ class AccountController extends ChangeNotifier {
       return result;
     }
 
-    print(result.data);
     Map<String, dynamic> data = result.data;
 
     var patients = Map<String, PatientModel>.fromIterable(
@@ -222,12 +237,6 @@ class AccountController extends ChangeNotifier {
     email = data['email'];
     _patients = patients;
     _appointments = appointments;
-
-    print('--- Displaying User Data');
-    print(email);
-    print(_patients);
-    print(_appointments);
-    print('--- END ---');
 
     notifyListeners();
 
@@ -295,6 +304,23 @@ class AccountController extends ChangeNotifier {
     _patients = patients;
     notifyListeners();
     return result.copyWith(data: patients);
+  }
+
+  Future<ApiResultModel> deletePatient(String patientId) async {
+    var api = ByteCareApi.getInstance();
+    var result;
+
+    try {
+      result = await api.getPatients(this._authToken);
+    } on ServerNotAvailableException {
+      throw ServerNotAvailableException();
+    }
+
+    if (result.code == 200) {
+      _patients.remove(patientId);
+    }
+
+    return result;
   }
 
   // Future<PatientModel> loadPatient(String patientId) async {
