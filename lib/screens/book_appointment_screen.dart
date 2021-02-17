@@ -132,75 +132,74 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     }
 
     if (_getProvider<AccountController>(context).availablePatients.isEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((timestamp) {
-        showDialog(
+      WidgetsBinding.instance.addPostFrameCallback((timestamp) async {
+        await showDialog(
           context: context,
+          barrierColor: Colors.black12,
+          barrierDismissible: false,
           builder: (context) => _buildNoPatientsContent(),
         );
+        Navigator.pop(this.context);
       });
     }
 
-    return GradientBackground(
-      theme: kByteCareThemeData,
-      background: GradientColorModel(kThemeGradientPrimaryAngled),
-      ignoreSafeArea: true,
-      child: _processState.build(_buildContent(context)),
+    return _processState.build(
+      GradientBackground(
+        theme: kByteCareThemeData,
+        background: GradientColorModel(kThemeGradientPrimaryAngled),
+        ignoreSafeArea: true,
+        child: _buildContent(context),
+      ),
     );
   }
 
   Widget _buildNoPatientsContent() {
-    return IntrinsicHeight(
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8.0),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
-        child: Material(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8.0),
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'No Patients',
-                  style: kTitle2TextStyle,
-                ),
-                SizedBox(height: 16.0),
-                Text(
-                  'Couldn\'t find any patients for you to use.',
-                  style: kBody1TextStyle,
-                ),
-                SizedBox(height: 8.0),
-                Text(
-                  'Create a new patient or wait until one of your other '
-                  'appointments are complete.',
-                  style: kBody1TextStyle,
-                ),
-                SizedBox(height: 24.0),
-                IntrinsicWidth(
-                  child: GradientButton(
-                    onPressed: () {
-                      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-                        Navigator.pop(this.context);
-                        Navigator.pop(this.context);
-                      });
-                    },
-                    background:
-                        GradientColorModel(kButtonBackgroundLinearGradient),
-                    borderRadius: BorderRadius.circular(8.0),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 16.0,
-                      horizontal: 24.0,
-                    ),
-                    child: Text(
-                      'Go Back',
-                      style: kButtonBody1TextStyle,
-                    ),
-                  ),
-                ),
-              ],
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'No Patients',
+              style: kTitle2TextStyle,
             ),
-          ),
+            SizedBox(height: 16.0),
+            Text(
+              'Couldn\'t find any patients for you to use.',
+              style: kBody1TextStyle,
+            ),
+            SizedBox(height: 8.0),
+            Text(
+              'Create a new patient or wait until one of your other '
+              'appointments are complete.',
+              style: kBody1TextStyle,
+            ),
+            SizedBox(height: 24.0),
+            IntrinsicWidth(
+              child: GradientButton(
+                onPressed: () {
+                  WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+                    Navigator.pop(this.context);
+                  });
+                },
+                background: GradientColorModel(kButtonBackgroundLinearGradient),
+                borderRadius: BorderRadius.circular(8.0),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16.0,
+                  horizontal: 24.0,
+                ),
+                child: Text(
+                  'Go Back',
+                  style: kButtonBody1TextStyle,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -210,11 +209,13 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        leading: BackButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+        leading: Navigator.canPop(context)
+            ? BackButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              )
+            : Container(),
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(80.0),
           child: Padding(
@@ -514,12 +515,21 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
 
       Navigator.pop(this.context);
     } else {
-      setState(() {
-        _processState.completeWithError(
-          result.code,
-          result.message,
-        );
-      });
+      if (result.data['type'] == 'ItemAlreadyExistsError') {
+        setState(() {
+          _processState.completeWithError(
+            result.code,
+            'The selected booking time is already in use, you cannot use it.',
+          );
+        });
+      } else {
+        setState(() {
+          _processState.completeWithError(
+            result.code,
+            result.message,
+          );
+        });
+      }
 
       await Future.delayed(kProcessErrorDelayDuration);
 
