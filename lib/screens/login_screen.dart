@@ -35,6 +35,7 @@ import '../widgets/processing_dialog.dart';
 
 // Screens
 import 'application_screen.dart';
+import 'create_patient_screen.dart';
 import 'forgot_password_screen.dart';
 import 'registration_screen.dart';
 import 'errors/no_server.dart';
@@ -121,17 +122,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        if (_processState == null) return true;
-        if (_processState.hasVisibleContent()) return false;
-        return true;
-      },
-      child: GradientBackground(
+    return _processState.build(
+      GradientBackground(
         theme: kByteCareThemeData,
         background: GradientColorModel(kThemeGradientPrimaryAngled),
         ignoreSafeArea: true,
-        child: _processState.build(_buildContent(context)),
+        child: _buildContent(context),
       ),
     );
   }
@@ -140,11 +136,13 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        leading: BackButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+        leading: Navigator.canPop(context)
+            ? BackButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              )
+            : Container(),
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(80.0),
           child: Padding(
@@ -364,8 +362,22 @@ class _LoginScreenState extends State<LoginScreen> {
         _getProvider<HospitalMarkerController>(this.context).hospitals,
       );
 
-      Navigator.pushNamedAndRemoveUntil(
-          context, ApplicationScreen.id, (r) => false);
+      if (_getProvider<AccountController>(this.context).hasPatients) {
+        Navigator.pushNamedAndRemoveUntil(
+          this.context,
+          ApplicationScreen.id,
+          (r) => false,
+        );
+      } else {
+        Navigator.push(
+          this.context,
+          MaterialPageRoute(
+            builder: (context) {
+              return CreatePatientScreen(returnPageId: ApplicationScreen.id);
+            },
+          ),
+        );
+      }
     } else {
       setState(() {
         _processState.completeWithError(
