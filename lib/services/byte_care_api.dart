@@ -27,6 +27,7 @@ class ByteCareApi {
     'status': Uri(pathSegments: [namespace, 'status']),
     'signup': Uri(pathSegments: [namespace, 'auth', 'signup']),
     'login': Uri(pathSegments: [namespace, 'auth', 'login']),
+    'verify': Uri(pathSegments: [namespace, 'auth', 'verify']),
     'forgotPassword': Uri(pathSegments: [namespace, 'auth', 'forgot']),
     'user': Uri(pathSegments: [namespace, 'user']),
     'patient': Uri(pathSegments: [namespace, 'patient', '<id>']),
@@ -145,6 +146,47 @@ class ByteCareApi {
     try {
       result = await _httpClient
           .post(url, body: jsonEncode(body), headers: headers)
+          .timeout(timeoutDuration);
+    } on SocketException {
+      throw ServerNotAvailableException();
+    } on TimeoutException {
+      throw ServerNotAvailableException();
+    }
+
+    if (result.statusCode == 200) {
+      return ApiResultModel(
+        code: result.statusCode,
+        data: jsonDecode(result.body),
+        hasError: false,
+      );
+    } else {
+      if (result.body is String && result.body.startsWith('<!DOCTYPE HTML')) {
+        return ApiResultModel(
+          code: result.statusCode,
+          message: 'Failed to login user.',
+          hasError: true,
+        );
+      } else {
+        return ApiResultModel(
+          code: result.statusCode,
+          message: jsonDecode(result.body)['message'],
+          hasError: true,
+        );
+      }
+    }
+  }
+
+  Future<ApiResultModel> verifyUser(String token) async {
+    var url = getFullUrl('verify');
+    var headers = {
+      'Authorization': 'Bearer $token',
+    };
+
+    var result;
+
+    try {
+      result = await _httpClient
+          .post(url, headers: headers)
           .timeout(timeoutDuration);
     } on SocketException {
       throw ServerNotAvailableException();
@@ -314,7 +356,6 @@ class ByteCareApi {
       'Authorization': 'Bearer $token',
     };
     var body = model.asMap();
-    print(body);
 
     var result;
 
@@ -379,6 +420,47 @@ class ByteCareApi {
         return ApiResultModel(
           code: result.statusCode,
           message: 'Failed to get patient data',
+          hasError: true,
+        );
+      } else {
+        return ApiResultModel(
+          code: result.statusCode,
+          message: jsonDecode(result.body)['message'],
+          hasError: true,
+        );
+      }
+    }
+  }
+
+  Future<ApiResultModel> deletePatient(String token, String patientId) async {
+    var url = getFullUrl('patients', {'id': patientId});
+    var headers = {
+      'Authorization': 'Bearer $token',
+    };
+
+    var result;
+
+    try {
+      result = await _httpClient
+          .delete(url, headers: headers)
+          .timeout(timeoutDuration);
+    } on SocketException {
+      throw ServerNotAvailableException;
+    } on TimeoutException {
+      throw ServerNotAvailableException;
+    }
+
+    if (result.statusCode == 200) {
+      return ApiResultModel(
+        code: result.statusCode,
+        data: jsonDecode(result.body),
+        hasError: false,
+      );
+    } else {
+      if (result.body is String && result.body.startsWith('<!DOCTYPE HTML')) {
+        return ApiResultModel(
+          code: result.statusCode,
+          message: 'Failed to delete patient.',
           hasError: true,
         );
       } else {
@@ -504,7 +586,7 @@ class ByteCareApi {
       } else {
         return ApiResultModel(
           code: result.statusCode,
-          message: jsonDecode(result.body)['message'],
+          message: jsonDecode(result.body),
           hasError: true,
         );
       }
