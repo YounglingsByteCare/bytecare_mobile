@@ -14,6 +14,8 @@ class ProcessingViewController extends ChangeNotifier {
   final ProcessingDialogThemeModel errorData;
   final ProcessingDialogThemeModel loadingData;
 
+  final bool Function(bool) onWillPopScope;
+
   final Widget Function(ProcessingDialogThemeModel, Widget, String)
       modalBuilder;
 
@@ -24,6 +26,7 @@ class ProcessingViewController extends ChangeNotifier {
     this.successData,
     this.errorData,
     this.loadingData,
+    this.onWillPopScope,
   });
 
   bool hasVisibleContent() {
@@ -34,22 +37,39 @@ class ProcessingViewController extends ChangeNotifier {
   Widget build(Widget content) {
     if (connectionState == ConnectionState.active) {
       String message = loadingData.message ?? '';
-      return modalBuilder(loadingData, content, message);
+      return popScopeWidget(modalBuilder(loadingData, content, message));
     } else if (connectionState == ConnectionState.done) {
       if (_result != null) {
         if (_result.hasError) {
           String message = errorData.message ?? _result.message;
-          return modalBuilder(errorData, content, message);
+          return popScopeWidget(modalBuilder(errorData, content, message));
         } else {
           String message = successData.message ?? _result.message;
-          return modalBuilder(successData, content, message);
+          return popScopeWidget(modalBuilder(successData, content, message));
         }
       } else {
-        return content;
+        return popScopeWidget(content);
       }
     } else {
-      return content;
+      return popScopeWidget(content);
     }
+  }
+
+  Widget popScopeWidget(Widget child) {
+    return WillPopScope(
+      onWillPop: () async {
+        bool result;
+
+        if (hasVisibleContent()) {
+          result = false;
+        } else {
+          result = true;
+        }
+
+        return this.onWillPopScope(result);
+      },
+      child: child,
+    );
   }
 
   void begin() {
