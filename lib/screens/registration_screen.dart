@@ -118,23 +118,27 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GradientBackground(
-      theme: kByteCareThemeData,
-      background: GradientColorModel(kThemeGradientPrimaryAngled),
-      ignoreSafeArea: false,
-      child: _processState.build(_buildContent()),
+    return _processState.build(
+      GradientBackground(
+        theme: kByteCareThemeData,
+        background: GradientColorModel(kThemeGradientPrimaryAngled),
+        ignoreSafeArea: false,
+        child: _buildContent(context),
+      ),
     );
   }
 
-  Widget _buildContent() {
+  Widget _buildContent(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        leading: BackButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+        leading: Navigator.canPop(context)
+            ? BackButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              )
+            : Container(),
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(80.0),
           child: Padding(
@@ -378,7 +382,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           context, ApplicationScreen.id, (r) => false);
     } else {
       setState(() {
-        _processState.completeWithError(400, '');
+        _processState.completeWithError(400, loginResult.message);
       });
 
       await Future.delayed(kProcessDelayDuration);
