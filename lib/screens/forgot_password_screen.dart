@@ -1,17 +1,35 @@
+import 'package:bytecare_mobile/widgets/gradient_button.dart';
 import 'package:flutter/material.dart';
 
 /* Project-level Imports */
-// Constants
+// Theme
 import '../theme/themes.dart';
 import '../theme/text.dart';
 import '../theme/gradients.dart';
+import '../theme/form.dart';
+
 // Data Models
 import '../models/gradient_color.dart';
+
+// Services
+import '../services/byte_care_api.dart';
+
 // Widgets
 import '../widgets/gradient_background.dart';
 
-class ForgotPasswordScreen extends StatelessWidget {
+// Screens
+import '../screens/errors/connection_failed.dart';
+
+class ForgotPasswordScreen extends StatefulWidget {
   static const String id = 'forgot_password_screen';
+
+  @override
+  _ForgotPasswordScreenState createState() => _ForgotPasswordScreenState();
+}
+
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+  TextEditingController _emailController = TextEditingController();
+  int _currentStep = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -78,14 +96,52 @@ class ForgotPasswordScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Stepper(
+                currentStep: _currentStep,
                 steps: [
                   Step(
-                    title: Text('Identify yourself'),
-                    subtitle: Text('Enter you email address'),
+                    title: Text('Get your token'),
                     content: Column(
                       children: [
-                        TextField(),
-                        TextField(),
+                        TextField(
+                          controller: _emailController,
+                          decoration: kFormFieldInputDecoration.copyWith(
+                              labelText: 'Email Address'),
+                        ),
+                        SizedBox(height: 16.0),
+                        GradientButton(
+                          borderRadius: BorderRadius.circular(8.0),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 16.0,
+                            horizontal: 24.0,
+                          ),
+                          onPressed: () async {
+                            var api = ByteCareApi.getInstance();
+                            var result;
+
+                            try {
+                              result = await api
+                                  .forgotPassword(_emailController.text);
+                            } on ServerNotAvailableException {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      ConnectionFailed(widget),
+                                ),
+                              );
+                            }
+
+                            if (result.code == 200) {
+                              setState(() {
+                                _currentStep++;
+                              });
+                            }
+                          },
+                          child: Text(
+                            'Send Email',
+                            style: kButtonBody1TextStyle,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -94,6 +150,47 @@ class ForgotPasswordScreen extends StatelessWidget {
                     subtitle: Text('Enter the code that we sent you'),
                     content: Column(
                       children: [
+                        TextField(
+                          controller: _emailController,
+                          decoration: kFormFieldInputDecoration.copyWith(
+                              labelText: 'Password'),
+                        ),
+                        SizedBox(height: 16.0),
+                        GradientButton(
+                          borderRadius: BorderRadius.circular(8.0),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 16.0,
+                            horizontal: 24.0,
+                          ),
+                          onPressed: () async {
+                            var api = ByteCareApi.getInstance();
+                            var result;
+
+                            try {
+                              result = await api
+                                  .forgotPassword(_emailController.text);
+                            } on ServerNotAvailableException {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      ConnectionFailed(widget),
+                                ),
+                              );
+                            }
+
+                            if (result.code == 200) {
+                              setState(() {
+                                _currentStep++;
+                              });
+                            }
+                          },
+                          child: Text(
+                            'Check my Code',
+                            style: kButtonBody1TextStyle,
+                          ),
+                        ),
+                        SizedBox(height: 32.0),
                         Text('Didn\'nt get the code? Click here'),
                       ],
                     ),
